@@ -1,0 +1,5 @@
+contract/node_modules/
+contract/tsp-output/
+sdk/node_modules/
+sdk/src/
+*.log

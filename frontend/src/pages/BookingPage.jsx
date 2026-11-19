@@ -2,19 +2,23 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { apiListMeetingTypes } from '../sdk'
 import BookingCalendar from '../components/BookingCalendar'
+import BookingSlots from '../components/BookingSlots'
 
 /** @typedef {import('../sdk').MeetingType} MeetingType */
 
 // Страница записи (GLOSSARY.md): типы встреч приходят только из сгенерированного SDK —
 // рукописный fetch к /api запрещён (спецификация #19). Пустое хранилище — одно пустое
 // состояние; иначе карточки: название, описание, длительность «NN мин» (user story 2).
-// С валидным ?type= — календарь окна со счётчиками (user stories 3–6, тикет #23); без
-// ?type= и с неизвестным ?type= — список типов, битая ссылка остаётся полезной (user story 19).
+// С валидным ?type= — календарь окна со счётчиками (user stories 3–6, тикет #23) и слоты
+// выбранного дня (тикет #24): выбранный день живёт здесь, а колонка слотов перемонтируется
+// по key с датой — смена дня сбрасывает выбор слота. Без ?type= и с неизвестным ?type= —
+// список типов, битая ссылка остаётся полезной (user story 19).
 // Сетевые сбои при загрузке страницы согласованы вне объёма (Out of Scope спецификации).
 function BookingPage() {
   const [searchParams] = useSearchParams()
   const typeParam = searchParams.get('type')
   const [types, setTypes] = useState(/** @type {MeetingType[] | null} */ (null))
+  const [selectedDate, setSelectedDate] = useState(/** @type {string | null} */ (null))
 
   useEffect(() => {
     apiListMeetingTypes().then((response) => {
@@ -31,7 +35,15 @@ function BookingPage() {
       {types === null ? (
         <p>Загружаем типы встреч…</p>
       ) : selectedType ? (
-        <BookingCalendar key={selectedType.id} type={selectedType} />
+        <div className="booking-flow">
+          <BookingCalendar
+            key={selectedType.id}
+            type={selectedType}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+          />
+          <BookingSlots key={`${selectedType.id}:${selectedDate ?? ''}`} type={selectedType} date={selectedDate} />
+        </div>
       ) : types.length === 0 ? (
         <p>Владелец ещё не завёл типы встреч. Загляните позже.</p>
       ) : (

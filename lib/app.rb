@@ -7,6 +7,7 @@ require_relative 'usecases'
 require_relative 'usecases/create_meeting_type'
 require_relative 'usecases/list_meeting_types'
 require_relative 'usecases/list_days_availability'
+require_relative 'usecases/list_day_slots'
 
 class App < Sinatra::Base
   set :public_folder, File.expand_path('../frontend/dist', __dir__)
@@ -40,6 +41,27 @@ class App < Sinatra::Base
     case result
     when UseCases::Success
       status 201
+      content_type :json
+      result.value.to_json
+    when UseCases::Failure
+      status_code, code = FAILURE_BY_CODE.fetch(result.code)
+      status status_code
+      content_type :json
+      { code: code, message: result.message }.to_json
+    end
+  end
+
+  # Контракт: GET /api/availability?date=&meeting_type_id= → 200 Availability (только влезающие
+  # в часы старты шагом 30 минут); неизвестный тип — 404 not_found; дата в прошлом, вне окна
+  # или неверного формата — 422 validation (спецификация #19, слоты дня — тикет #24).
+  get '/api/availability' do
+    result = UseCases::ListDaySlots.new(store: settings.store).call(
+      date: params['date'],
+      meeting_type_id: params['meeting_type_id']
+    )
+
+    case result
+    when UseCases::Success
       content_type :json
       result.value.to_json
     when UseCases::Failure

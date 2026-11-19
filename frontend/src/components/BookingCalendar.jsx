@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiGetAvailabilityDays } from '../sdk'
+import { MONTHS_GENITIVE, MONTHS_NOMINATIVE, WEEKDAYS, dateKey, monthKey, parseDateKey } from '../lib/dates'
 
 /** @typedef {import('../sdk').MeetingType} MeetingType */
 
@@ -9,60 +10,11 @@ import { apiGetAvailabilityDays } from '../sdk'
 // понедельника) рисуется сразу, бейджи доезжают с ответом. День окна кликабелен даже при
 // нуле свободных слотов — так «всё занято» отличимо от «день недоступен»; прошедшие и
 // внеоконные дни отключены. Стрелки переключения месяцев блокируются на границах окна.
-// Выбор дня и колонка слотов — следующий тикет.
-
-const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
-
-const MONTHS_NOMINATIVE = [
-  'январь',
-  'февраль',
-  'март',
-  'апрель',
-  'май',
-  'июнь',
-  'июль',
-  'август',
-  'сентябрь',
-  'октябрь',
-  'ноябрь',
-  'декабрь',
-]
-
-const MONTHS_GENITIVE = [
-  'января',
-  'февраля',
-  'марта',
-  'апреля',
-  'мая',
-  'июня',
-  'июля',
-  'августа',
-  'сентября',
-  'октября',
-  'ноября',
-  'декабря',
-]
-
-/** Ключ дня `YYYY-MM-DD` для сравнения с датами окна из API. */
-function dateKey(/** @type {Date} */ date) {
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${date.getFullYear()}-${month}-${day}`
-}
-
-/** @param {Date} date */
-function monthKey(/** @type {Date} */ date) {
-  return dateKey(date).slice(0, 7)
-}
+// Выбор дня живёт на странице записи (тикет #24): клик сообщается наверх onSelectDate,
+// а выбранный день подсвечивается пропом selectedDate.
 
 /** Ключ `YYYY-MM-DD` → Date для стартовой даты окна. */
-function parseDateKey(/** @type {string} */ key) {
-  const [year, month, day] = key.split('-').map(Number)
-  return new Date(year, month - 1, day)
-}
-
-/** Ячейки сетки месяцев: видимый месяц целиком, неделя начинается с понедельника. */
-function buildCells(/** @type {Date} */ monthDate) {
+function buildMonthCells(/** @type {Date} */ monthDate) {
   const year = monthDate.getFullYear()
   const month = monthDate.getMonth()
   const weekdayOffset = (new Date(year, month, 1).getDay() + 6) % 7
@@ -75,15 +27,20 @@ function buildCells(/** @type {Date} */ monthDate) {
   })
 }
 
-/** @param {{ type: MeetingType }} props */
-function BookingCalendar({ type }) {
+/**
+ * @param {{
+ *   type: MeetingType,
+ *   selectedDate: string | null,
+ *   onSelectDate: (date: string) => void,
+ * }} props
+ */
+function BookingCalendar({ type, selectedDate, onSelectDate }) {
   // Счётчики по дням и границы окна — только из API; до ответа счётчиков нет и ни один
   // день не считается днём окна (сетка видна сразу, но некликабельна). Смена типа
   // перемонтирует компонент по key на странице записи, состояние стартовое не устаревает.
   const [counts, setCounts] = useState(/** @type {Record<string, number>} */ ({}))
   const [windowDays, setWindowDays] = useState(/** @type {{ start: string, end: string } | null} */ (null))
   const [monthDate, setMonthDate] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1))
-  const [selectedDate, setSelectedDate] = useState(/** @type {string | null} */ (null))
 
   useEffect(() => {
     apiGetAvailabilityDays({ query: { meeting_type_id: type.id } }).then((response) => {
@@ -134,7 +91,7 @@ function BookingCalendar({ type }) {
       </div>
 
       <div className="calendar__grid">
-        {buildCells(monthDate).map(({ date, key }) => {
+        {buildMonthCells(monthDate).map(({ date, key }) => {
           const inWindow = windowDays !== null && key >= windowDays.start && key <= windowDays.end
           const count = counts[key] ?? 0
           const selected = selectedDate === key
@@ -146,7 +103,7 @@ function BookingCalendar({ type }) {
               className={`calendar__day${selected ? ' calendar__day--selected' : ''}`}
               aria-label={`${date.getDate()} ${MONTHS_GENITIVE[date.getMonth()]}`}
               disabled={!inWindow}
-              onClick={() => setSelectedDate(key)}
+              onClick={() => onSelectDate(key)}
             >
               <span className="calendar__day-number">{date.getDate()}</span>
               {inWindow && count > 0 ? <span className="calendar__badge">{`${count} св.`}</span> : null}

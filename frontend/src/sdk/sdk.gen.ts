@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ApiCreateBookingData, ApiCreateBookingErrors, ApiCreateBookingResponses, ApiCreateMeetingTypeData, ApiCreateMeetingTypeErrors, ApiCreateMeetingTypeResponses, ApiGetAvailabilityData, ApiGetAvailabilityErrors, ApiGetAvailabilityResponses, ApiHealthData, ApiHealthResponses, ApiListBookingsData, ApiListBookingsResponses, ApiListMeetingTypesData, ApiListMeetingTypesResponses } from './types.gen';
+import type { ApiCreateBookingData, ApiCreateBookingErrors, ApiCreateBookingResponses, ApiCreateMeetingTypeData, ApiCreateMeetingTypeErrors, ApiCreateMeetingTypeResponses, ApiGetAvailabilityData, ApiGetAvailabilityDaysData, ApiGetAvailabilityDaysErrors, ApiGetAvailabilityDaysResponses, ApiGetAvailabilityErrors, ApiGetAvailabilityResponses, ApiHealthData, ApiHealthResponses, ApiListBookingsData, ApiListBookingsResponses, ApiListMeetingTypesData, ApiListMeetingTypesResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -18,10 +18,36 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
+/**
+ * Доступность стартов конкретной даты: только старты с шагом 30 минут, целиком
+ * влезающие в рабочие часы 09:00-18:00. Прошедшие старты сегодняшнего дня —
+ * `available: false`. Неизвестный `meeting_type_id` — 404 not_found; дата в
+ * прошлом, вне окна или неверного формата — 422 validation.
+ */
 export const apiGetAvailability = <ThrowOnError extends boolean = false>(options: Options<ApiGetAvailabilityData, ThrowOnError>): RequestResult<ApiGetAvailabilityResponses, ApiGetAvailabilityErrors, ThrowOnError> => (options.client ?? client).get<ApiGetAvailabilityResponses, ApiGetAvailabilityErrors, ThrowOnError>({ url: '/api/availability', ...options });
 
+/**
+ * Счётчики свободных слотов по всем дням окна записи за один запрос.
+ * Ответ содержит все 14 дней окна по возрастанию даты, включая дни с нулём
+ * свободных слотов. Неизвестный `meeting_type_id` — 404 not_found;
+ * неверный формат параметра — 422 validation.
+ */
+export const apiGetAvailabilityDays = <ThrowOnError extends boolean = false>(options: Options<ApiGetAvailabilityDaysData, ThrowOnError>): RequestResult<ApiGetAvailabilityDaysResponses, ApiGetAvailabilityDaysErrors, ThrowOnError> => (options.client ?? client).get<ApiGetAvailabilityDaysResponses, ApiGetAvailabilityDaysErrors, ThrowOnError>({ url: '/api/availability/days', ...options });
+
+/**
+ * Предстоящие брони: только со стартом строго позже текущего момента
+ * (Europe/Moscow), отсортированы по дате и началу по возрастанию;
+ * пустой массив, когда записей нет.
+ */
 export const apiListBookings = <ThrowOnError extends boolean = false>(options?: Options<ApiListBookingsData, ThrowOnError>): RequestResult<ApiListBookingsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ApiListBookingsResponses, unknown, ThrowOnError>({ url: '/api/bookings', ...options });
 
+/**
+ * Запись на слот. Формат полей и доменные правила (дата вне окна, старт в прошлом,
+ * старт не на сетке 30 минут или не влезающий в часы, неизвестный
+ * `meeting_type_id`) — 422 validation. Пересечение интервалов, включая частичное
+ * наложение разных типов встреч и одновременные запросы, — 409 conflict;
+ * при гонке создаётся ровно одна бронь.
+ */
 export const apiCreateBooking = <ThrowOnError extends boolean = false>(options: Options<ApiCreateBookingData, ThrowOnError>): RequestResult<ApiCreateBookingResponses, ApiCreateBookingErrors, ThrowOnError> => (options.client ?? client).post<ApiCreateBookingResponses, ApiCreateBookingErrors, ThrowOnError>({
     url: '/api/bookings',
     ...options,
@@ -31,10 +57,21 @@ export const apiCreateBooking = <ThrowOnError extends boolean = false>(options: 
     }
 });
 
+/**
+ * Проверка живости сервиса
+ */
 export const apiHealth = <ThrowOnError extends boolean = false>(options?: Options<ApiHealthData, ThrowOnError>): RequestResult<ApiHealthResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ApiHealthResponses, unknown, ThrowOnError>({ url: '/api/health', ...options });
 
+/**
+ * Список типов встреч
+ */
 export const apiListMeetingTypes = <ThrowOnError extends boolean = false>(options?: Options<ApiListMeetingTypesData, ThrowOnError>): RequestResult<ApiListMeetingTypesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ApiListMeetingTypesResponses, unknown, ThrowOnError>({ url: '/api/meeting-types', ...options });
 
+/**
+ * Создание типа встречи. `id` задаёт владелец — слаг `^[a-z0-9-]{1,64}$`.
+ * Неверный формат `id`, названия или длительности (вне 30-240 или не кратна 30) —
+ * 422 validation; занятый `id` — 409 conflict.
+ */
 export const apiCreateMeetingType = <ThrowOnError extends boolean = false>(options: Options<ApiCreateMeetingTypeData, ThrowOnError>): RequestResult<ApiCreateMeetingTypeResponses, ApiCreateMeetingTypeErrors, ThrowOnError> => (options.client ?? client).post<ApiCreateMeetingTypeResponses, ApiCreateMeetingTypeErrors, ThrowOnError>({
     url: '/api/meeting-types',
     ...options,

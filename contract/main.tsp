@@ -1,6 +1,8 @@
 import "@typespec/http";
+import "@typespec/openapi";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 
 @service(#{ title: "Call Booking Service" })
 @info(#{ version: "1.0.0" })

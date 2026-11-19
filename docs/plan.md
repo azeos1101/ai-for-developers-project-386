@@ -29,9 +29,9 @@
 
 ### Этап A. Каркас (шаг 1) — облако планирует, Qwen делает, я проверяю
 1. Решения по стеку (см. «Открытые вопросы»), запись в README.
-2. Sinatra-приложение по официальному getting started: `config.ru`, `GET /` отвечает, `GET /health`. Дымовой тест (rack-test).
+2. Sinatra-приложение по официальному getting started: `config.ru`, `GET /` отвечает, `GET /api/health`. Дымовой тест (rack-test).
 3. Фронтенд: React (JSX) + Vite по официальному getting started; `vite build` → статика, которую отдаёт Sinatra; в dev — прокси Vite на Sinatra.
-4. Цепочка SDK: `mise run generate` = TypeSpec → OpenAPI → SDK (`@hey-api/openapi-ts`); `generate:check` покрывает `sdk/`.
+4. Цепочка SDK: `mise run generate` = TypeSpec → OpenAPI → SDK (`@hey-api/openapi-ts`); `generate:check` покрывает `frontend/src/sdk/`.
 5. `.github/workflows/check.yml`: `jdx/mise-action` → `mise run install` → `mise run check` на каждый push (пины по SHA, `permissions: contents: read`, `timeout-minutes`, `concurrency`).
 6. hk: pre-commit — быстрые проверки staged-файлов; pre-push — `mise run check`.
 7. AGENTS.md: `/init` в OpenCode, сверка с нашим, сокращение; правило Conventional Commits (`feat:`/`fix:`… + описание по-русски).

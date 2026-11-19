@@ -109,6 +109,11 @@ model BookingInput {
   @pattern("^\\d{2}:\\d{2}$") start: string;
 }
 
+/** Состояние сервиса */
+model HealthStatus {
+  status: "ok";
+}
+
 /** Коды ошибок API */
 enum ErrorCode {
   validation: "validation",
@@ -124,6 +129,9 @@ model ApiError {
 
 @route("/api")
 interface Api {
+  @route("/health")
+  @get health(): HealthStatus;
+
   @route("/meeting-types")
   @get listMeetingTypes(): MeetingType[];
 

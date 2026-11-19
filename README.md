@@ -12,26 +12,29 @@
 
 - **Ruby** + **Sinatra** — лёгкий веб-фреймворк (без авторизации, один владелец календаря)
 - **Хранение в памяти процесса** — типы встреч и брони живут в `Store` (Ruby `Mutex` для атомарности проверки конфликтов). **Ограничение: перезапуск процесса сбрасывает все записи.**
-- **ERB** — серверные шаблоны
-- **Vanilla JS** — календарь и выбор слотов на клиенте
+- **React (JSX) + Vite** — фронтенд; Sinatra отдаёт собранный `frontend/dist`, в dev-режиме — Vite с прокси `/api` на Sinatra
 - **Кастомный CSS** — стилизация под эталон (светлая тема, оранжевый акцент)
-- **TypeSpec → OpenAPI 3 → клиентский SDK** — API проектируется контрактом (`contract/main.tsp`), спецификация генерируется (`openapi/openapi.yaml`), JS SDK для фронтенда генерируется из спецификации (`@hey-api/openapi-ts` + esbuild)
+- **TypeSpec → OpenAPI 3 → клиентский SDK** — API проектируется контрактом (`contract/main.tsp`), спецификация генерируется (`openapi/openapi.yaml`), SDK для фронтенда генерирует `@hey-api/openapi-ts` в `frontend/src/sdk/`
 
 ## Установка
 
 ```bash
 git clone https://github.com/azeos1101/ai-for-developers-project-386.git
 cd ai-for-developers-project-386
-make install   # bundle install + npm install для генерации контракта
-make generate  # TypeSpec → OpenAPI → JS SDK (нужен только при смене контракта)
+mise run install   # зависимости: гемы, компилятор контракта и фронтенд
+mise run generate  # TypeSpec → OpenAPI → SDK в frontend/src/sdk/ (нужен только при смене контракта)
 ```
 
 ## Использование
 
 ```bash
-make run   # запуск сервера на http://localhost:4567
-make test  # запуск тестов (minitest + rack-test)
+mise run build  # сборка фронтенда в frontend/dist
+mise run run    # сервер на http://localhost:4567
+mise run dev    # Vite dev-сервер с прокси /api на :4567
+mise run check  # линтеры + тесты + сверка сгенерированного
 ```
+
+`make` — тонкая обёртка над этими командами (`make install`, `make generate`, `make run`, `make test`, `make lint`, `make check`).
 
 ## Зафиксированные параметры спецификации
 

@@ -38,6 +38,7 @@ fi
 
 [tasks.test]
 description = "Тесты (minitest + rack-test)"
+depends = ["build"]
 run = "bundle exec rake test"
 
 [tasks."lint:ruby"]

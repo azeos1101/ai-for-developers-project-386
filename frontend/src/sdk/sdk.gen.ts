@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ApiCreateBookingData, ApiCreateBookingErrors, ApiCreateBookingResponses, ApiCreateMeetingTypeData, ApiCreateMeetingTypeErrors, ApiCreateMeetingTypeResponses, ApiGetAvailabilityData, ApiGetAvailabilityErrors, ApiGetAvailabilityResponses, ApiListBookingsData, ApiListBookingsResponses, ApiListMeetingTypesData, ApiListMeetingTypesResponses } from './types.gen';
+import type { ApiCreateBookingData, ApiCreateBookingErrors, ApiCreateBookingResponses, ApiCreateMeetingTypeData, ApiCreateMeetingTypeErrors, ApiCreateMeetingTypeResponses, ApiGetAvailabilityData, ApiGetAvailabilityErrors, ApiGetAvailabilityResponses, ApiHealthData, ApiHealthResponses, ApiListBookingsData, ApiListBookingsResponses, ApiListMeetingTypesData, ApiListMeetingTypesResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -30,6 +30,8 @@ export const apiCreateBooking = <ThrowOnError extends boolean = false>(options: 
         ...options.headers
     }
 });
+
+export const apiHealth = <ThrowOnError extends boolean = false>(options?: Options<ApiHealthData, ThrowOnError>): RequestResult<ApiHealthResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ApiHealthResponses, unknown, ThrowOnError>({ url: '/api/health', ...options });
 
 export const apiListMeetingTypes = <ThrowOnError extends boolean = false>(options?: Options<ApiListMeetingTypesData, ThrowOnError>): RequestResult<ApiListMeetingTypesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ApiListMeetingTypesResponses, unknown, ThrowOnError>({ url: '/api/meeting-types', ...options });
 

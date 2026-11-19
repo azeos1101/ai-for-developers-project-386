@@ -17,5 +17,4 @@ jobs:
           persist-credentials: false
       - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
       - run: mise run install
-      - run: mise run build
       - run: mise run check

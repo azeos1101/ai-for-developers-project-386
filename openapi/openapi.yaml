@@ -84,6 +84,17 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BookingInput'
+  /api/health:
+    get:
+      operationId: Api_health
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
   /api/meeting-types:
     get:
       operationId: Api_listMeetingTypes
@@ -231,6 +242,16 @@ components:
         - not_found
         - conflict
       description: Коды ошибок API
+    HealthStatus:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+      description: Состояние сервиса
     MeetingType:
       type: object
       required:

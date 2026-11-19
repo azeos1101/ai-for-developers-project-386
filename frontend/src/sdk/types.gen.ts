@@ -87,6 +87,13 @@ export type BookingInput = {
 export type ErrorCode = 'validation' | 'not_found' | 'conflict';
 
 /**
+ * Состояние сервиса
+ */
+export type HealthStatus = {
+    status: 'ok';
+};
+
+/**
  * Тип встречи, заведённый владельцем календаря
  */
 export type MeetingType = {
@@ -209,6 +216,22 @@ export type ApiCreateBookingResponses = {
 };
 
 export type ApiCreateBookingResponse = ApiCreateBookingResponses[keyof ApiCreateBookingResponses];
+
+export type ApiHealthData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/health';
+};
+
+export type ApiHealthResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: HealthStatus;
+};
+
+export type ApiHealthResponse = ApiHealthResponses[keyof ApiHealthResponses];
 
 export type ApiListMeetingTypesData = {
     body?: never;

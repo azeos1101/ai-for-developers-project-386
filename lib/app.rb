@@ -8,6 +8,7 @@ require_relative 'usecases/create_meeting_type'
 require_relative 'usecases/list_meeting_types'
 require_relative 'usecases/list_days_availability'
 require_relative 'usecases/list_day_slots'
+require_relative 'usecases/create_booking'
 
 class App < Sinatra::Base
   set :public_folder, File.expand_path('../frontend/dist', __dir__)
@@ -80,6 +81,26 @@ class App < Sinatra::Base
 
     case result
     when UseCases::Success
+      content_type :json
+      result.value.to_json
+    when UseCases::Failure
+      status_code, code = FAILURE_BY_CODE.fetch(result.code)
+      status status_code
+      content_type :json
+      { code: code, message: result.message }.to_json
+    end
+  end
+
+  # Контракт: POST /api/bookings → 201 Booking (полная бронь: id, денормализованный
+  # meeting_type_name, end, created_at ISO 8601); 422 validation — формат полей, дата вне
+  # окна, старт не на сетке/в часах/в прошлом, неизвестный meeting_type_id; 409 conflict —
+  # пересечение интервалов (матрица #19, правило пересечений — следующий тикет).
+  post '/api/bookings' do
+    result = UseCases::CreateBooking.new(store: settings.store).call(request.body.read)
+
+    case result
+    when UseCases::Success
+      status 201
       content_type :json
       result.value.to_json
     when UseCases::Failure

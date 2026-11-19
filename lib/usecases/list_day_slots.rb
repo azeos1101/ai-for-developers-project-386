@@ -44,19 +44,10 @@ module UseCases
       }
     end
 
-    # Рабочая дата запроса: YYYY-MM-DD, существовавший календарный день внутри окна записи
-    # (окно начинается сегодня по Moscow, 14 дней); иначе nil → :validation. Date::Error —
-    # штатный сигнал парсера «такого дня нет» (2026-02-30), здесь он и есть отказ.
+    # Рабочая дата запроса: та же проверка окна и формата, что и у POST /api/bookings
+    # (SlotGrid::window_date); за пределами окна или кривой формат — nil → :validation.
     def window_date(date)
-      parsed = begin
-        date.is_a?(String) ? Date.iso8601(date) : nil
-      rescue Date::Error
-        nil
-      end
-      return nil if parsed.nil?
-
-      today = SlotGrid.today_moscow(@now_utc)
-      parsed if parsed >= today && (parsed - today) < SlotGrid::WINDOW_DAYS
+      SlotGrid.window_date(date, @now_utc)
     end
 
     # Один слот = старт + длительность типа в HH:MM по Moscow; доступен старт, не раньше
@@ -64,18 +55,11 @@ module UseCases
     def build_slots(starts, duration_min)
       starts.map do |start_time|
         {
-          start: moscow_hhmm(start_time),
-          end: moscow_hhmm(start_time + (duration_min * 60)),
+          start: SlotGrid.moscow_hhmm(start_time),
+          end: SlotGrid.moscow_hhmm(start_time + (duration_min * 60)),
           available: start_time >= @now_utc
         }
       end
-    end
-
-    # HH:MM по Europe/Moscow: сдвиг на фиксированный +03:00, часы читаются из сдвинутого момента.
-    def moscow_hhmm(utc_time)
-      moscow_time = utc_time + SlotGrid::MOSCOW_UTC_OFFSET
-
-      format('%<hour>02d:%<min>02d', hour: moscow_time.hour, min: moscow_time.min)
     end
   end
 end

@@ -14,6 +14,7 @@ module UseCases
     WORK_START_HOUR = 9
     WORK_END_HOUR = 18
     START_STEP_SECONDS = 30 * 60
+    START_STEP_MINUTES = 30
     SLUG_PATTERN = /\A[a-z0-9-]{1,64}\z/
 
     module_function
@@ -25,6 +26,44 @@ module UseCases
     # Календарное «сегодня» по Moscow: UTC-момент сдвинут на фиксированный +03:00.
     def today_moscow(now_utc)
       (now_utc + MOSCOW_UTC_OFFSET).to_date
+    end
+
+    # Рабочая дата запроса: YYYY-MM-DD, существовавший календарный день внутри окна записи
+    # (окно начинается сегодня по Moscow, 14 дней); иначе nil → :validation. Date::Error —
+    # штатный сигнал парсера «такого дня нет» (2026-02-30), здесь он и есть отказ.
+    def window_date(date, now_utc)
+      parsed = begin
+        date.is_a?(String) ? Date.iso8601(date) : nil
+      rescue Date::Error
+        nil
+      end
+      return nil if parsed.nil?
+
+      today = today_moscow(now_utc)
+      parsed if parsed >= today && (parsed - today) < WINDOW_DAYS
+    end
+
+    # HH:MM по Europe/Moscow: сдвиг на фиксированный +03:00, часы читаются из сдвинутого момента.
+    def moscow_hhmm(utc_time)
+      moscow_time = utc_time + MOSCOW_UTC_OFFSET
+
+      format('%<hour>02d:%<min>02d', hour: moscow_time.hour, min: moscow_time.min)
+    end
+
+    # Начало HH:MM этого дня моментом UTC по той же сетке 30 минут, что и day_starts:
+    # корректное HH:MM (часы 00–23, минуты 00 или 30) → момент; кривая строка или старт
+    # вне сетки (10:15, 09:90) → nil.
+    def grid_start_time(date, hhmm)
+      return nil unless hhmm.is_a?(String)
+
+      matched = /\A(\d{2}):(\d{2})\z/.match(hhmm)
+      return nil if matched.nil?
+
+      hour = matched[1].to_i
+      minute = matched[2].to_i
+      return nil if hour > 23 || minute % START_STEP_MINUTES != 0
+
+      work_boundary(date, hour) + (minute * 60)
     end
 
     # Момент UTC, соответствующий указанному часу по Europe/Moscow в этот календарный день.

@@ -4,10 +4,17 @@ ruby = "3.3.11"
 node = "25.9.0"
 ast-grep = "0.51.3"
 vacuum = "0.41.0"
+hk = "2.13.0"
+pkl = "0.33.0"
 
 [tasks.install]
 description = "Зависимости: гемы, компилятор контракта и фронтенд"
-run = ["bundle install", "npm ci --prefix contract", "npm ci --prefix frontend"]
+run = ["bundle install", "npm ci --prefix contract", "npm ci --prefix frontend", "mise run hooks:install"]
+
+[tasks."hooks:install"]
+description = "Установить git-хуки"
+# --legacy: на Git >= 2.54 hk иначе регистрирует хуки через git-config, а не файлами .git/hooks/
+run = "hk install --mise --legacy"
 
 [tasks.generate]
 description = "TypeSpec → openapi/openapi.yaml"
@@ -24,7 +31,7 @@ depends = ["generate"]
 run = '''
 if [ -n "$(git status --porcelain -- openapi frontend/src/sdk)" ]; then
   git status --short -- openapi frontend/src/sdk
-  echo "generate:check: openapi/ отличается от contract/main.tsp; fix: правь contract/main.tsp, запусти mise run generate и закоммить результат"
+  echo "generate:check: openapi/ или frontend/src/sdk/ отличаются от contract/main.tsp; fix: правь contract/main.tsp, запусти mise run generate и закоммить результат"
   exit 1
 fi
 '''

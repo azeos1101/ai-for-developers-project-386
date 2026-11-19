@@ -16,15 +16,17 @@ VALIDATED_APP = Committee::Middleware::RequestValidation.new(
   Committee::Middleware::ResponseValidation.new(
     App,
     schema_path: OPENAPI_PATH,
+    strict_reference_validation: true,
     validate_success_only: false,
     raise: true
   ),
   schema_path: OPENAPI_PATH,
+  strict_reference_validation: true,
   raise: true
 )
 
 # Общие ассерты и фикстуры rack-тестов.
-class Minitest
+module Minitest
   class Test
     # POST JSON на контрактный маршрут; Content-Type задаём явно, как требует схема.
     def post_json(path, hash)

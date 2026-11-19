@@ -2,15 +2,51 @@
 
 require 'json'
 require 'sinatra/base'
+require_relative 'store'
+require_relative 'usecases'
+require_relative 'usecases/create_meeting_type'
+require_relative 'usecases/list_meeting_types'
 
 class App < Sinatra::Base
   set :public_folder, File.expand_path('../frontend/dist', __dir__)
   # ADR-0001: порт из переменной PORT, по умолчанию 4567.
   set :port, Integer(ENV.fetch('PORT', 4567))
+  # Хранилище в памяти процесса: типы встреч и будущие брони живут до перезапуска (README).
+  set :store, Store.new
+
+  # Матрица кодов отказа из контракта: код use-case → [HTTP-статус, машинный код].
+  FAILURE_BY_CODE = {
+    validation: [422, 'validation'],
+    conflict: [409, 'conflict'],
+    not_found: [404, 'not_found']
+  }.freeze
 
   get '/api/health' do
     content_type :json
     { status: 'ok' }.to_json
+  end
+
+  # Контракт: GET /api/meeting-types → 200 MeetingType[] без ошибок, порядок заведения.
+  get '/api/meeting-types' do
+    content_type :json
+    UseCases::ListMeetingTypes.new(store: settings.store).call.value.to_json
+  end
+
+  # Контракт: POST /api/meeting-types → 201 MeetingType; 422 validation; 409 conflict (занят id).
+  post '/api/meeting-types' do
+    result = UseCases::CreateMeetingType.new(store: settings.store).call(request.body.read)
+
+    case result
+    when UseCases::Success
+      status 201
+      content_type :json
+      result.value.to_json
+    when UseCases::Failure
+      status_code, code = FAILURE_BY_CODE.fetch(result.code)
+      status status_code
+      content_type :json
+      { code: code, message: result.message }.to_json
+    end
   end
 
   # ADR-0001: catch-all на все GET вне /api — отдать index.html, карту маршрутов рисует react-router.

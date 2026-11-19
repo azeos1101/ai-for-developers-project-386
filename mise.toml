@@ -6,6 +6,7 @@ ast-grep = "0.51.3"
 vacuum = "0.41.0"
 hk = "2.13.0"
 pkl = "0.33.0"
+gh = "2.105.0"
 
 [tasks.install]
 description = "Зависимости: гемы, компилятор контракта и фронтенд"
@@ -57,9 +58,13 @@ run = "vacuum lint --no-banner --errors --details openapi/openapi.yaml"
 description = "oxlint (фронтенд)"
 run = "npm run lint --prefix frontend"
 
+[tasks."lint:types"]
+description = "Проверка типов фронтенда (tsc по jsconfig.json, код остаётся JS)"
+run = "npm run typecheck --prefix frontend"
+
 [tasks.lint]
 description = "Все линтеры"
-depends = ["lint:ruby", "lint:ast", "lint:openapi", "lint:js"]
+depends = ["lint:ruby", "lint:ast", "lint:openapi", "lint:js", "lint:types"]
 
 [tasks.check]
 description = "Всё перед коммитом: линт, тесты, сгенерированное"

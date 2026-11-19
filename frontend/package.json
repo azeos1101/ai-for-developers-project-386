@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint --deny-warnings src",
+    "typecheck": "tsc -p jsconfig.json",
     "generate:sdk": "openapi-ts",
     "preview": "vite preview"
   },

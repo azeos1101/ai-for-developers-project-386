@@ -10,6 +10,9 @@ import { defineConfig, devices } from '@playwright/test'
 const PORT = 4580
 const ISOLATED_PORT = 4581
 const CALENDAR_PORT = 4582
+// Четвёртый сервер на 4583 — спека слотов дня (#24): свои фикстуры типов, чтобы не трогать
+// строгие сверки состава списков на 4580/4581 и календарные проверки на 4582.
+const SLOTS_PORT = 4583
 
 const server = (port: number) => ({
   command: 'mise run run',
@@ -29,5 +32,5 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${PORT}`,
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: [server(PORT), server(ISOLATED_PORT), server(CALENDAR_PORT)],
+  webServer: [server(PORT), server(ISOLATED_PORT), server(CALENDAR_PORT), server(SLOTS_PORT)],
 })

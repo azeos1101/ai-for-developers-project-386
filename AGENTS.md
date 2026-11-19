@@ -27,3 +27,19 @@ API проектируется контрактом: `contract/main.tsp` (TypeSp
 - Застрял: одна и та же ошибка проверки дважды подряд → вызови субагента `advisor`, не перебирай варианты.
 - Готовая задача: `mise run check` зелёный + ревью субагента `review`.
 - Перед «готово» опиши: что изменено, какие команды запускал и их результат, что не проверено.
+
+## Agent skills
+
+В OpenCode скиллы набора вызываются просьбой по имени («Запусти скилл wayfinder») или ссылкой `@.agents/skills/<имя>/SKILL.md`.
+
+### Issue tracker
+
+Задачи ведутся в GitHub Issues репозитория `azeos1101/ai-for-developers-project-386` (через `gh` CLI). См. `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Используются пять меток по умолчанию: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. См. `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Один контекст: словарь `GLOSSARY.md` в корне, решения — `docs/adr/`. См. `docs/agents/domain.md`.

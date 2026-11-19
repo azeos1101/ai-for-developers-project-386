@@ -15,7 +15,8 @@
 ## Состояние
 
 **2026-11-19 вечер:** шаг 1 ✅ (этап A, CI зелёный, в master), шаг 2 ✅ (этап B: 27 скиллов Покока в `.agents/skills/`, `docs/agents/`, метки в GitHub, проверка новой сессией пройдена). 
-**2026-11-19 ночь:** шаг 3 ✅ (этап C: `/grill-with-docs` → `GLOSSARY.md`, ADR-0001/0002; `/implement` → SPA на react-router, catch-all, 404 JSON, PORT, rack-тесты + 5 e2e на Playwright; ревью Kimi 0 находок; CI зелёный, в master). Дальше — шаг 4 (`/wayfinder`).
+**2026-11-19 ночь:** шаг 3 ✅ (этап C: `/grill-with-docs` → `GLOSSARY.md`, ADR-0001/0002; `/implement` → SPA на react-router, catch-all, 404 JSON, PORT, rack-тесты + 5 e2e на Playwright; ревью Kimi 0 находок; CI зелёный, в master). 
+**2026-11-20:** шаг 4 ✅ (этап D): карта решений #1 (17 тикетов решено), спецификация #19, 13 вертикальных тикетов #20–#32 с нативными зависимостями; первый — контрактная цепочка #21. Дальше — шаг 5 (`/implement-spec` по #19).
 
 Исходная таблица (на начало работ):
 

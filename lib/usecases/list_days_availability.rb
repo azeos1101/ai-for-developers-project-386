@@ -6,11 +6,10 @@ require_relative 'slot_grid'
 
 module UseCases
   # GET /api/availability/days: счётчики свободных стартов по всем календарным дням
-  # 14-дневного окна записи (спецификация #19). Сетка стартов, часы и окно — общие
-  # с ListDaySlots (SlotGrid); старты раньше текущего момента не считаются. Броней ещё
-  # нет (тикеты бронирования впереди), поэтому счёт — только по времени и длительности
-  # типа. Неверный формат meeting_type_id — :validation, неизвестный тип — :not_found
-  # (матрица кодов контракта).
+  # 14-дневного окна записи (спецификация #19, тикеты #23 и #25). Сетка стартов, часы и
+  # окно — общие с ListDaySlots (SlotGrid); старты раньше текущего момента и старты,
+  # пересекающиеся с существующими бронями, в счёт не входят. Неверный формат
+  # meeting_type_id — :validation, неизвестный тип — :not_found (матрица кодов контракта).
   class ListDaysAvailability
     VALIDATION_MESSAGE = 'Не удалось получить счётчики по дням. Проверьте meeting_type_id.'
     NOT_FOUND_MESSAGE = 'Тип встречи не найден.'
@@ -36,9 +35,15 @@ module UseCases
 
     private
 
-    # Число стартов дня: сетка из SlotGrid, старт не раньше текущего момента.
+    # Число стартов дня: сетка из SlotGrid; старты раньше текущего момента и старты,
+    # пересекающиеся с бронями этого дня (тикет #25), не считаются.
     def available_count(date, duration_min)
-      SlotGrid.day_starts(date, duration_min).count { |start_time| start_time >= @now_utc }
+      intervals = SlotGrid.day_booking_intervals(date, @store.bookings)
+
+      SlotGrid.day_starts(date, duration_min).count do |start_time|
+        start_time >= @now_utc &&
+          !SlotGrid.overlaps_any?(start_time, start_time + (duration_min * 60), intervals)
+      end
     end
   end
 end

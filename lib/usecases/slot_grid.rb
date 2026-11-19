@@ -84,5 +84,28 @@ module UseCases
       end
       starts
     end
+
+    # Занятые интервалы дня парами моментов UTC [начало, конец): брони календарной даты,
+    # их start/end — HH:MM того же дня по Moscow. Общий источник для обоих эндпоинтов
+    # доступности (тикет #25): старт слота вне занятости, если не пересекается ни с одним
+    # интервалом (примыкание end == start следующего слота пересечением не считается).
+    def day_booking_intervals(date, bookings)
+      day = date.strftime('%Y-%m-%d')
+
+      bookings.filter_map do |booking|
+        next unless booking[:date] == day
+
+        start_time = grid_start_time(date, booking[:start])
+        end_time = grid_start_time(date, booking[:end])
+        next if start_time.nil? || end_time.nil?
+
+        [start_time, end_time]
+      end
+    end
+
+    # Пересекается ли слот [start_time, slot_end) с каким-либо занятым интервалом.
+    def overlaps_any?(start_time, slot_end, intervals)
+      intervals.any? { |booking_start, booking_end| start_time < booking_end && booking_start < slot_end }
+    end
   end
 end

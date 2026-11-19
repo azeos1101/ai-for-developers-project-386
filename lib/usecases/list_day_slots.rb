@@ -6,10 +6,11 @@ require_relative 'slot_grid'
 
 module UseCases
   # GET /api/availability: все влезающие в рабочие часы старты конкретной даты для типа
-  # встречи (спецификация #19, тикет #24). Сетка, часы и окно — общие с ListDaysAvailability
-  # (SlotGrid); из прошедших стартов сегодняшнего дня недоступен каждый (броней ещё нет —
-  # тикеты бронирования впереди). Неверный meeting_type_id или дата в прошлом, вне окна и
-  # неверного формата — :validation, неизвестный тип — :not_found (матрица кодов контракта).
+  # встречи (спецификация #19, тикеты #24 и #25). Сетка, часы и окно — общие с
+  # ListDaysAvailability (SlotGrid); недоступны прошедшие старты сегодняшнего дня и старты,
+  # пересекающиеся с существующими бронями (примыкание разрешено). Неверный
+  # meeting_type_id или дата в прошлом, вне окна и неверного формата — :validation,
+  # неизвестный тип — :not_found (матрица кодов контракта).
   class ListDaySlots
     VALIDATION_MESSAGE = 'Не удалось получить слоты дня. Проверьте date и meeting_type_id.'
     NOT_FOUND_MESSAGE = 'Тип встречи не найден.'
@@ -36,11 +37,12 @@ module UseCases
     # Ответ Availability: эхо параметров и полная сетка стартов дня.
     def payload(day, meeting_type_id, duration_min)
       starts = SlotGrid.day_starts(day, duration_min)
+      intervals = SlotGrid.day_booking_intervals(day, @store.bookings)
 
       {
         date: day.strftime('%Y-%m-%d'),
         meeting_type_id: meeting_type_id,
-        slots: build_slots(starts, duration_min)
+        slots: build_slots(starts, duration_min, intervals)
       }
     end
 
@@ -50,14 +52,17 @@ module UseCases
       SlotGrid.window_date(date, @now_utc)
     end
 
-    # Один слот = старт + длительность типа в HH:MM по Moscow; доступен старт, не раньше
-    # текущего момента (правило окна). Брони пометят занятыми будущие тикеты.
-    def build_slots(starts, duration_min)
+    # Один слот = старт + длительность типа в HH:MM по Moscow; недоступен старт раньше
+    # текущего момента (правило окна) и старт, пересекающийся с бронью (тикет #25) —
+    # примыкающий к броне 11:00 остается свободен.
+    def build_slots(starts, duration_min, intervals)
       starts.map do |start_time|
+        slot_end = start_time + (duration_min * 60)
+
         {
           start: SlotGrid.moscow_hhmm(start_time),
-          end: SlotGrid.moscow_hhmm(start_time + (duration_min * 60)),
-          available: start_time >= @now_utc
+          end: SlotGrid.moscow_hhmm(slot_end),
+          available: start_time >= @now_utc && !SlotGrid.overlaps_any?(start_time, slot_end, intervals)
         }
       end
     end

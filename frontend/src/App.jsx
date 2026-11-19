@@ -4,6 +4,7 @@ import ConfirmPage from './pages/ConfirmPage.jsx'
 import EventsPage from './pages/EventsPage.jsx'
 import MainPage from './pages/MainPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
+import SuccessPage from './pages/SuccessPage.jsx'
 
 function App() {
   return (
@@ -11,8 +12,10 @@ function App() {
       <Routes>
         <Route path="/" element={<MainPage />} />
         <Route path="/booking" element={<BookingPage />} />
-        {/* Маршрут экрана подтверждения (тикет #24): параметры type/date/start — в URL. */}
+        {/* Экран подтверждения: параметры type/date/start — в URL (тикеты #24, #25). */}
         <Route path="/booking/confirm" element={<ConfirmPage />} />
+        {/* Экран успеха после 201 POST /api/bookings (тикет #25). */}
+        <Route path="/booking/success" element={<SuccessPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

@@ -18,7 +18,9 @@ function BookingPage() {
   const [searchParams] = useSearchParams()
   const typeParam = searchParams.get('type')
   const [types, setTypes] = useState(/** @type {MeetingType[] | null} */ (null))
-  const [selectedDate, setSelectedDate] = useState(/** @type {string | null} */ (null))
+  // День можно принести ссылкой ?date= (переход «Изменить» с экрана подтверждения, #25);
+  // выбор слота при этом свежий — состояние компонента, занятый слот не выделен.
+  const [selectedDate, setSelectedDate] = useState(searchParams.get('date'))
 
   useEffect(() => {
     apiListMeetingTypes().then((response) => {

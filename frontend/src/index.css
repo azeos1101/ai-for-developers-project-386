@@ -131,7 +131,8 @@ a {
   margin-top: 48px;
 }
 
-.events-form {
+.events-form,
+.confirm-form {
   display: grid;
   gap: 8px;
   padding: 24px;
@@ -140,7 +141,8 @@ a {
   background: var(--color-surface);
 }
 
-.events-form__banner {
+.events-form__banner,
+.confirm-form__banner {
   margin: 0 0 8px;
   padding: 12px 16px;
   border-radius: 8px;
@@ -150,19 +152,22 @@ a {
   font-size: 15px;
 }
 
-.events-form__error {
+.events-form__error,
+.confirm-form__error {
   margin: 0;
   color: #b91c1c;
   font-size: 13px;
 }
 
-.events-form__label {
+.events-form__label,
+.confirm-form__label {
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text-muted);
 }
 
-.events-form__field {
+.events-form__field,
+.confirm-form__field {
   padding: 10px 12px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -171,12 +176,14 @@ a {
   background: var(--color-surface);
 }
 
-.events-form__field[aria-invalid='true'] {
+.events-form__field[aria-invalid='true'],
+.confirm-form__field[aria-invalid='true'] {
   border-color: #b91c1c;
   outline: 2px solid #fecaca;
 }
 
-.events-form .button {
+.events-form .button,
+.confirm-form .button {
   margin-top: 16px;
   border: none;
   cursor: pointer;

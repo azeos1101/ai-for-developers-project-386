@@ -9,8 +9,26 @@ pkl = "0.33.0"
 gh = "2.105.0"
 
 [tasks.install]
-description = "Зависимости: гемы, компилятор контракта и фронтенд"
-run = ["bundle install", "npm ci --prefix contract", "npm ci --prefix frontend", "mise run hooks:install"]
+description = "Зависимости: гемы, компилятор контракта, фронтенд и e2e"
+run = [
+  "bundle install",
+  "npm ci --prefix contract",
+  "npm ci --prefix frontend",
+  "npm ci --prefix e2e",
+  "mise run e2e:browser",
+  "mise run hooks:install",
+]
+
+[tasks."e2e:browser"]
+description = "Chromium для Playwright: на CI (ubuntu) с системными зависимостями, локально — без sudo"
+dir = "e2e"
+run = '''
+if [ "${CI:-}" = "true" ]; then
+  npx --no-install playwright install --with-deps chromium
+else
+  npx --no-install playwright install chromium
+fi
+'''
 
 [tasks."hooks:install"]
 description = "Установить git-хуки"
@@ -42,6 +60,12 @@ description = "Тесты (minitest + rack-test)"
 depends = ["build"]
 run = "bundle exec rake test"
 
+[tasks."test:e2e"]
+description = "Браузерные e2e-тесты (Playwright, chromium) — основной тест страниц, ADR-0002"
+depends = ["build"]
+dir = "e2e"
+run = "npx --no-install playwright test"
+
 [tasks."lint:ruby"]
 description = "RuboCop"
 run = "bundle exec rubocop"
@@ -62,13 +86,18 @@ run = "npm run lint --prefix frontend"
 description = "Проверка типов фронтенда (tsc по jsconfig.json, код остаётся JS)"
 run = "npm run typecheck --prefix frontend"
 
+[tasks."lint:e2e"]
+description = "Типы e2e (tsc --noEmit по e2e/tsconfig.json)"
+dir = "e2e"
+run = "npx --no-install tsc --noEmit"
+
 [tasks.lint]
 description = "Все линтеры"
-depends = ["lint:ruby", "lint:ast", "lint:openapi", "lint:js", "lint:types"]
+depends = ["lint:ruby", "lint:ast", "lint:openapi", "lint:js", "lint:types", "lint:e2e"]
 
 [tasks.check]
-description = "Всё перед коммитом: линт, тесты, сгенерированное"
-depends = ["lint", "test", "generate:check"]
+description = "Всё перед коммитом: линт, тесты (включая e2e), сгенерированное"
+depends = ["lint", "test", "test:e2e", "generate:check"]
 
 [tasks.build]
 description = "Сборка фронтенда в frontend/dist"

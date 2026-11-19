@@ -7,9 +7,9 @@ API проектируется контрактом: `contract/main.tsp` (TypeSp
 ## Команды
 
 - `mise run install` — зависимости.
-- `mise run check` — линт + тесты + сверка сгенерированного. **Задача не готова, пока `mise run check` не прошёл.** Git-хуки (`hk.pkl`): pre-commit — `lint`, pre-push — `check`.
+- `mise run check` — линт + тесты (rack + Playwright e2e) + сверка сгенерированного. **Задача не готова, пока `mise run check` не прошёл.** Git-хуки (`hk.pkl`): pre-commit — `lint`, pre-push — `check`.
 - `mise run test` — только тесты; `mise run lint` — только линтеры; `mise run generate` — пересобрать OpenAPI и SDK.
-- `mise run run` — сервер на http://localhost:4567; `mise run dev` — Vite с прокси `/api` на :4567; `mise run build` — сборка фронтенда.
+- `mise run run` — сервер на http://localhost:4567 (порт из переменной `PORT`); `mise run dev` — Vite с прокси `/api` на :4567; `mise run build` — сборка фронтенда.
 - CI (`.github/workflows/check.yml`) на каждый push: `install` → `build` → `check`.
 
 ## Правила

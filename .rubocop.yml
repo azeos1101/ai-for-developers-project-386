@@ -1,0 +1,14 @@
+plugins:
+  - rubocop-minitest
+
+AllCops:
+  TargetRubyVersion: 3.3
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - 'contract/**/*'
+    - 'sdk/**/*'
+    - 'vendor/**/*'
+
+Style/Documentation:
+  Enabled: false

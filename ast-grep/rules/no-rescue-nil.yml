@@ -1,0 +1,9 @@
+# Почему: `x rescue nil` молча глотает любую ошибку — слабая модель так «чинит» падения.
+id: no-rescue-nil
+language: ruby
+severity: error
+message: "rule 1: inline `rescue nil` hides every error; fix: rescue a specific exception class and handle it, or let it raise"
+rule:
+  kind: rescue_modifier
+  has:
+    kind: nil

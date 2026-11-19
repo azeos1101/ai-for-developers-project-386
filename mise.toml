@@ -1,0 +1,57 @@
+# Окружение проекта. Единая точка входа для человека, агента и хуков: `mise run check`.
+[tools]
+ruby = "3.3.11"
+node = "25.9.0"
+ast-grep = "0.51.3"
+vacuum = "0.41.0"
+
+[tasks.install]
+description = "Зависимости: гемы и компилятор контракта"
+run = ["bundle install", "npm ci --prefix contract"]
+
+[tasks.generate]
+description = "TypeSpec → openapi/openapi.yaml"
+dir = "contract"
+run = [
+  "npx --no-install tsp compile .",
+  "cp tsp-output/@typespec/openapi3/openapi.yaml ../openapi/openapi.yaml",
+]
+
+[tasks."generate:check"]
+description = "Сгенерированное совпадает с контрактом (ручные правки openapi/ запрещены)"
+depends = ["generate"]
+run = '''
+if [ -n "$(git status --porcelain -- openapi)" ]; then
+  git status --short -- openapi
+  echo "generate:check: openapi/ отличается от contract/main.tsp; fix: правь contract/main.tsp, запусти mise run generate и закоммить результат"
+  exit 1
+fi
+'''
+
+[tasks.test]
+description = "Тесты (minitest + rack-test)"
+run = "bundle exec rake test"
+
+[tasks."lint:ruby"]
+description = "RuboCop"
+run = "bundle exec rubocop"
+
+[tasks."lint:ast"]
+description = "Правила проекта (ast-grep) и их тесты"
+run = ["ast-grep test --skip-snapshot-tests", "ast-grep scan"]
+
+[tasks."lint:openapi"]
+description = "Линт OpenAPI"
+run = "vacuum lint --details openapi/openapi.yaml"
+
+[tasks.lint]
+description = "Все линтеры"
+depends = ["lint:ruby", "lint:ast", "lint:openapi"]
+
+[tasks.check]
+description = "Всё перед коммитом: линт, тесты, сгенерированное"
+depends = ["lint", "test", "generate:check"]
+
+[tasks.run]
+description = "Сервер на http://localhost:4567"
+run = "bundle exec rackup -p 4567"

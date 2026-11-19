@@ -1,0 +1,13 @@
+# Почему: условие в тесте значит, что тест проверяет разные вещи в разных прогонах.
+id: no-branching-in-tests
+language: ruby
+severity: error
+message: "rule 2: no if/unless/case inside tests; fix: split into separate tests with fixed inputs and one expected result each"
+files: ["test/**/*_test.rb"]
+rule:
+  any:
+    - kind: if
+    - kind: unless
+    - kind: case
+    - kind: if_modifier
+    - kind: unless_modifier

@@ -1,0 +1,6 @@
+id: no-branching-in-tests
+valid:
+  - "def test_create\n  assert_equal 201, last_response.status\nend"
+invalid:
+  - "def test_create\n  if ok\n    assert true\n  end\nend"
+  - "def test_create\n  assert true if ok\nend"

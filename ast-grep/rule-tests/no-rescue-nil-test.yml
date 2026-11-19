@@ -1,0 +1,7 @@
+id: no-rescue-nil
+valid:
+  - "value = Integer(input)"
+  - "begin\n  Integer(input)\nrescue ArgumentError\n  0\nend"
+invalid:
+  - "value = Integer(input) rescue nil"
+  - "store.find(id) rescue nil"

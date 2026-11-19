@@ -1,9 +1,17 @@
+import { BrowserRouter, Route, Routes } from 'react-router'
+import BookingPage from './pages/BookingPage.jsx'
+import MainPage from './pages/MainPage.jsx'
+import NotFoundPage from './pages/NotFoundPage.jsx'
+
 function App() {
   return (
-    <>
-      <h1>Запись на звонок</h1>
-      <p>Сервис бронирования встреч.</p>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<MainPage />} />
+        <Route path="/booking" element={<BookingPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 

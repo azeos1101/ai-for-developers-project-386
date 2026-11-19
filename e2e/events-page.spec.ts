@@ -93,11 +93,43 @@ test('занятый id — баннер про существующий тип 
   await expect(page.getByLabel('id', { exact: true })).toHaveAttribute('aria-invalid', 'true')
 })
 
-test('некорректные поля — баннер о проверке полей', async ({ page }) => {
+test('кривой slug — ошибка у поля id без запроса на сервер', async ({ page }) => {
   await page.goto('/events')
 
-  await fillTypeForm(page, { id: 'Ab C', name: 'Кривой id', description: '', durationMinutes: 30 })
+  // Шпион запросов: POST на сервер при клиентской ошибке поля не должен случиться вовсе.
+  let postSent = false
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/meeting-types') {
+      postSent = true
+    }
+  })
+
+  await fillTypeForm(page, { id: 'Плохой Slug', name: 'Кривой id', description: '', durationMinutes: 30 })
   await page.getByRole('button', { name: 'Создать тип встречи' }).click()
 
-  await expect(page.getByRole('alert')).toHaveText('Не удалось создать тип встречи. Проверьте поля.')
+  const idField = page.getByLabel('id', { exact: true })
+  await expect(idField).toHaveAttribute('aria-invalid', 'true')
+  await expect(idField).toHaveAccessibleDescription(
+    'Введите id: только строчные латинские буквы, цифры и дефис, до 64 символов',
+  )
+  await page.waitForTimeout(500)
+  expect(postSent, 'POST /api/meeting-types не должен уйти при клиентской ошибке').toBe(false)
+})
+
+test('после первой отправки изменённые поля перепроверяются на вводе', async ({ page }) => {
+  await page.goto('/events')
+
+  // Пустой id и пустое название: первая отправка показывает обе ошибки, запроса нет.
+  await page.getByRole('button', { name: 'Создать тип встречи' }).click()
+  await expect(page.getByLabel('id', { exact: true })).toHaveAccessibleDescription(
+    'Введите id: только строчные латинские буквы, цифры и дефис, до 64 символов',
+  )
+  await expect(page.getByLabel('Название')).toHaveAccessibleDescription('Введите название')
+
+  // Исправляем только id — его ошибка снимается на вводе, ошибка названия остаётся.
+  await page.getByLabel('id', { exact: true }).fill('fixed-id')
+  await expect(page.getByLabel('id', { exact: true })).not.toHaveAccessibleDescription(
+    'Введите id: только строчные латинские буквы, цифры и дефис, до 64 символов',
+  )
+  await expect(page.getByLabel('Название')).toHaveAccessibleDescription('Введите название')
 })

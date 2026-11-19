@@ -150,6 +150,12 @@ a {
   font-size: 15px;
 }
 
+.events-form__error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
 .events-form__label {
   font-size: 14px;
   font-weight: 600;

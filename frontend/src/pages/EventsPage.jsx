@@ -13,6 +13,35 @@ const DURATION_OPTIONS = [30, 60, 90, 120, 150, 180, 210, 240]
 
 const EMPTY_FORM = { id: '', name: '', description: '', duration: '30' }
 
+// Клиентские проверки — ровно правила контракта (contract/main.tsp): slug `^[a-z0-9-]{1,64}$`,
+// name ≥ 1 символ, duration — только значения из select. Ничего сверх контракта не выдумываем.
+const ID_PATTERN = /^[a-z0-9-]{1,64}$/
+
+const ID_ERROR = 'Введите id: только строчные латинские буквы, цифры и дефис, до 64 символов'
+const NAME_ERROR = 'Введите название'
+const DURATION_ERROR = 'Выберите длительность из списка'
+
+/** @typedef {Partial<Record<'id' | 'name' | 'duration', string>>} FieldErrors */
+
+/**
+ * @param {typeof EMPTY_FORM} values
+ * @returns {FieldErrors}
+ */
+function validateForm(values) {
+  /** @type {FieldErrors} */
+  const errors = {}
+  if (!ID_PATTERN.test(values.id)) {
+    errors.id = ID_ERROR
+  }
+  if (values.name.length < 1) {
+    errors.name = NAME_ERROR
+  }
+  if (!DURATION_OPTIONS.includes(Number(values.duration))) {
+    errors.duration = DURATION_ERROR
+  }
+  return errors
+}
+
 const CONFLICT_BANNER = 'Тип с таким id уже существует.'
 const VALIDATION_BANNER = 'Не удалось создать тип встречи. Проверьте поля.'
 const NETWORK_BANNER = 'Не удалось создать тип встречи. Попробуйте ещё раз.'
@@ -23,6 +52,9 @@ function EventsPage() {
   const [banner, setBanner] = useState(/** @type {string | null} */ (null))
   const [idHighlighted, setIdHighlighted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [errors, setErrors] = useState(/** @type {FieldErrors} */ ({}))
+  // После первой отправки изменённые поля перепроверяются на вводе (спецификация #19).
+  const [everSubmitted, setEverSubmitted] = useState(false)
 
   useEffect(() => {
     apiListMeetingTypes().then((response) => {
@@ -31,16 +63,31 @@ function EventsPage() {
   }, [])
 
   /**
-   * @param {string} field
+   * @param {keyof typeof EMPTY_FORM} field
    * @returns {(event: { target: { value: string } }) => void}
    */
   function updateField(field) {
-    return (event) => setForm({ ...form, [field]: event.target.value })
+    return (event) => {
+      const nextForm = { ...form, [field]: event.target.value }
+      setForm(nextForm)
+      if (everSubmitted) {
+        setErrors(validateForm(nextForm))
+      }
+    }
   }
 
   /** @param {{ preventDefault: () => void }} event */
   async function submitType(event) {
     event.preventDefault()
+    setEverSubmitted(true)
+
+    const fieldErrors = validateForm(form)
+    setErrors(fieldErrors)
+    if (Object.keys(fieldErrors).length > 0) {
+      // Клиентская ошибка поля — запрос на сервер не уходит вовсе.
+      return
+    }
+
     setSubmitting(true)
     setBanner(null)
     setIdHighlighted(false)
@@ -60,6 +107,8 @@ function EventsPage() {
       // 201: форма очищается, тип дописывается в список из тела ответа — без рефетча.
       setTypes((current) => (current === null ? [created] : [...current, created]))
       setForm(EMPTY_FORM)
+      setEverSubmitted(false)
+      setErrors({})
     } else if (response.response?.status === 409) {
       setBanner(CONFLICT_BANNER)
       setIdHighlighted(true)
@@ -88,8 +137,14 @@ function EventsPage() {
           placeholder="intro-call"
           value={form.id}
           onChange={updateField('id')}
-          aria-invalid={idHighlighted ? 'true' : undefined}
+          aria-invalid={idHighlighted || errors.id !== undefined ? 'true' : undefined}
+          aria-describedby={errors.id !== undefined ? 'meeting-type-id-error' : undefined}
         />
+        {errors.id !== undefined ? (
+          <p className="events-form__error" id="meeting-type-id-error">
+            {errors.id}
+          </p>
+        ) : null}
 
         <label className="events-form__label" htmlFor="meeting-type-name">
           Название
@@ -99,7 +154,14 @@ function EventsPage() {
           id="meeting-type-name"
           value={form.name}
           onChange={updateField('name')}
+          aria-invalid={errors.name !== undefined ? 'true' : undefined}
+          aria-describedby={errors.name !== undefined ? 'meeting-type-name-error' : undefined}
         />
+        {errors.name !== undefined ? (
+          <p className="events-form__error" id="meeting-type-name-error">
+            {errors.name}
+          </p>
+        ) : null}
 
         <label className="events-form__label" htmlFor="meeting-type-description">
           Описание
@@ -119,6 +181,8 @@ function EventsPage() {
           id="meeting-type-duration"
           value={form.duration}
           onChange={updateField('duration')}
+          aria-invalid={errors.duration !== undefined ? 'true' : undefined}
+          aria-describedby={errors.duration !== undefined ? 'meeting-type-duration-error' : undefined}
         >
           {DURATION_OPTIONS.map((minutes) => (
             <option key={minutes} value={String(minutes)}>
@@ -126,6 +190,11 @@ function EventsPage() {
             </option>
           ))}
         </select>
+        {errors.duration !== undefined ? (
+          <p className="events-form__error" id="meeting-type-duration-error">
+            {errors.duration}
+          </p>
+        ) : null}
 
         <button className="button" type="submit" disabled={submitting}>
           Создать тип встречи

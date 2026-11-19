@@ -6,8 +6,8 @@ ast-grep = "0.51.3"
 vacuum = "0.41.0"
 
 [tasks.install]
-description = "Зависимости: гемы и компилятор контракта"
-run = ["bundle install", "npm ci --prefix contract"]
+description = "Зависимости: гемы, компилятор контракта и фронтенд"
+run = ["bundle install", "npm ci --prefix contract", "npm ci --prefix frontend"]
 
 [tasks.generate]
 description = "TypeSpec → openapi/openapi.yaml"
@@ -44,13 +44,25 @@ run = ["ast-grep test --skip-snapshot-tests", "ast-grep scan"]
 description = "Линт OpenAPI"
 run = "vacuum lint --details openapi/openapi.yaml"
 
+[tasks."lint:js"]
+description = "oxlint (фронтенд)"
+run = "npm run lint --prefix frontend"
+
 [tasks.lint]
 description = "Все линтеры"
-depends = ["lint:ruby", "lint:ast", "lint:openapi"]
+depends = ["lint:ruby", "lint:ast", "lint:openapi", "lint:js"]
 
 [tasks.check]
 description = "Всё перед коммитом: линт, тесты, сгенерированное"
 depends = ["lint", "test", "generate:check"]
+
+[tasks.build]
+description = "Сборка фронтенда в frontend/dist"
+run = "npm run build --prefix frontend"
+
+[tasks.dev]
+description = "Vite dev-сервер, прокси /api на :4567"
+run = "npm run dev --prefix frontend"
 
 [tasks.run]
 description = "Сервер на http://localhost:4567"

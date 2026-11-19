@@ -218,3 +218,85 @@ a {
   margin: 0;
   font-size: 16px;
 }
+
+/* Календарь окна записи (тикет #23): сетка месяца, бейджи «N св.», серый некликабельный
+   день вне окна — приглушённый фон и текст, выбранный день — оранжевая рамка (эталон). */
+.calendar {
+  margin-top: 24px;
+  text-align: left;
+}
+
+.calendar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.calendar__header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.calendar__arrow {
+  min-width: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.calendar__arrow:disabled {
+  color: var(--color-text-muted);
+  opacity: 0.5;
+  cursor: default;
+}
+
+.calendar__weekdays,
+.calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar__weekdays {
+  margin-bottom: 4px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.calendar__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 52px;
+  padding: 6px 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.calendar__day:disabled {
+  background: var(--color-background);
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.calendar__day--selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.calendar__badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-accent-dark);
+}

@@ -12,6 +12,7 @@ group :development do
 end
 
 group :test do
+  gem 'committee'
   gem 'minitest'
   gem 'rack-test'
   gem 'rake'

@@ -4,13 +4,12 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
-export type ApiError = {
-    code: ErrorCode;
-    message: string;
-};
-
 /**
- * Доступность слотов на конкретную дату для типа встречи
+ * Доступность слотов на конкретную дату для типа встречи.
+ *
+ * День содержит только старты с шагом 30 минут, чей слот целиком помещается
+ * в рабочие часы; старты, не влезающие в часы, не возвращаются. Прошедшие старты
+ * сегодняшнего дня возвращаются с `available: false`.
  */
 export type Availability = {
     /**
@@ -18,24 +17,43 @@ export type Availability = {
      */
     date: string;
     /**
-     * Идентификатор типа встречи
+     * Идентификатор типа встречи (слаг)
      */
-    meeting_type_id: number;
+    meeting_type_id: string;
     /**
-     * Все старты дня с шагом 30 минут, помеченные доступностью
+     * Все влезающие в рабочие часы старты дня с шагом 30 минут, помеченные доступностью
      */
     slots: Array<Slot>;
+};
+
+/**
+ * Доступность по дням всего 14-дневного окна для типа встречи.
+ *
+ * Содержит все дни окна по возрастанию даты, включая дни с нулём свободных слотов.
+ */
+export type AvailabilitySummary = {
+    /**
+     * Идентификатор типа встречи (слаг)
+     */
+    meeting_type_id: string;
+    /**
+     * Все 14 дней окна по возрастанию даты
+     */
+    days: Array<DayAvailability>;
 };
 
 /**
  * Бронь звонка
  */
 export type Booking = {
+    /**
+     * Идентификатор брони
+     */
     id: number;
     /**
-     * Тип встречи
+     * Тип встречи (слаг)
      */
-    meeting_type_id: number;
+    meeting_type_id: string;
     /**
      * Название типа встречи (денормализовано для удобства клиента)
      */
@@ -74,15 +92,58 @@ export type Booking = {
  * Запрос на создание брони
  */
 export type BookingInput = {
-    meeting_type_id: number;
+    /**
+     * Тип встречи (слаг)
+     */
+    meeting_type_id: string;
+    /**
+     * Имя гостя
+     */
     name: string;
+    /**
+     * Email гостя
+     */
     email: string;
+    /**
+     * Дата слота, YYYY-MM-DD
+     */
     date: string;
+    /**
+     * Начало слота, HH:MM (Europe/Moscow), шаг 30 минут
+     */
     start: string;
 };
 
 /**
- * Коды ошибок API
+ * Время уже занято (фактический конфликт интервалов или гонка)
+ */
+export type ConflictError = {
+    /**
+     * Причина отказа
+     */
+    code: 'conflict';
+    /**
+     * Человекочитаемое объяснение отказа
+     */
+    message: string;
+};
+
+/**
+ * Число свободных слотов одного дня окна записи
+ */
+export type DayAvailability = {
+    /**
+     * Дата в формате YYYY-MM-DD
+     */
+    date: string;
+    /**
+     * Число стартов, доступных для брони (целиком в рабочих часах, не прошедшие, без пересечений)
+     */
+    available_count: number;
+};
+
+/**
+ * Машинночитаемый код ошибки API
  */
 export type ErrorCode = 'validation' | 'not_found' | 'conflict';
 
@@ -98,9 +159,9 @@ export type HealthStatus = {
  */
 export type MeetingType = {
     /**
-     * Идентификатор типа встречи
+     * Идентификатор типа встречи — слаг, который задаёт владелец
      */
-    id: number;
+    id: string;
     /**
      * Название (например, «Созвон-знакомство»)
      */
@@ -110,18 +171,45 @@ export type MeetingType = {
      */
     description: string;
     /**
-     * Длительность встречи в минутах
+     * Длительность встречи в минутах — от 30 до 240 включительно, кратна 30
      */
     duration: number;
 };
 
 /**
- * Запрос на создание типа встречи
+ * Запрос на создание типа встречи; id задаёт владелец
  */
 export type MeetingTypeInput = {
+    /**
+     * Идентификатор типа встречи — слаг `^[a-z0-9-]{1,64}$` (например, `intro-call`)
+     */
+    id: string;
+    /**
+     * Название встречи
+     */
     name: string;
+    /**
+     * Описание встречи
+     */
     description?: string;
+    /**
+     * Длительность встречи в минутах — от 30 до 240 включительно, кратна 30
+     */
     duration: number;
+};
+
+/**
+ * Тип встречи с таким идентификатором не существует
+ */
+export type NotFoundError = {
+    /**
+     * Причина отказа
+     */
+    code: 'not_found';
+    /**
+     * Человекочитаемое объяснение отказа
+     */
+    message: string;
 };
 
 /**
@@ -142,6 +230,20 @@ export type Slot = {
     available: boolean;
 };
 
+/**
+ * Отказ по формату поля или доменным правилам
+ */
+export type ValidationError = {
+    /**
+     * Причина отказа
+     */
+    code: 'validation';
+    /**
+     * Человекочитаемое объяснение отказа
+     */
+    message: string;
+};
+
 export type ApiGetAvailabilityData = {
     body?: never;
     path?: never;
@@ -151,18 +253,22 @@ export type ApiGetAvailabilityData = {
          */
         date: string;
         /**
-         * Идентификатор типа встречи
+         * Идентификатор типа встречи (слаг)
          */
-        meeting_type_id: number;
+        meeting_type_id: string;
     };
     url: '/api/availability';
 };
 
 export type ApiGetAvailabilityErrors = {
     /**
-     * An unexpected error response.
+     * Тип встречи с таким идентификатором не существует
      */
-    default: ApiError;
+    404: NotFoundError;
+    /**
+     * Отказ по формату поля или доменным правилам
+     */
+    422: ValidationError;
 };
 
 export type ApiGetAvailabilityError = ApiGetAvailabilityErrors[keyof ApiGetAvailabilityErrors];
@@ -175,6 +281,40 @@ export type ApiGetAvailabilityResponses = {
 };
 
 export type ApiGetAvailabilityResponse = ApiGetAvailabilityResponses[keyof ApiGetAvailabilityResponses];
+
+export type ApiGetAvailabilityDaysData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Идентификатор типа встречи (слаг)
+         */
+        meeting_type_id: string;
+    };
+    url: '/api/availability/days';
+};
+
+export type ApiGetAvailabilityDaysErrors = {
+    /**
+     * Тип встречи с таким идентификатором не существует
+     */
+    404: NotFoundError;
+    /**
+     * Отказ по формату поля или доменным правилам
+     */
+    422: ValidationError;
+};
+
+export type ApiGetAvailabilityDaysError = ApiGetAvailabilityDaysErrors[keyof ApiGetAvailabilityDaysErrors];
+
+export type ApiGetAvailabilityDaysResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AvailabilitySummary;
+};
+
+export type ApiGetAvailabilityDaysResponse = ApiGetAvailabilityDaysResponses[keyof ApiGetAvailabilityDaysResponses];
 
 export type ApiListBookingsData = {
     body?: never;
@@ -201,9 +341,13 @@ export type ApiCreateBookingData = {
 
 export type ApiCreateBookingErrors = {
     /**
-     * An unexpected error response.
+     * Время уже занято (фактический конфликт интервалов или гонка)
      */
-    default: ApiError;
+    409: ConflictError;
+    /**
+     * Отказ по формату поля или доменным правилам
+     */
+    422: ValidationError;
 };
 
 export type ApiCreateBookingError = ApiCreateBookingErrors[keyof ApiCreateBookingErrors];
@@ -258,9 +402,13 @@ export type ApiCreateMeetingTypeData = {
 
 export type ApiCreateMeetingTypeErrors = {
     /**
-     * An unexpected error response.
+     * Время уже занято (фактический конфликт интервалов или гонка)
      */
-    default: ApiError;
+    409: ConflictError;
+    /**
+     * Отказ по формату поля или доменным правилам
+     */
+    422: ValidationError;
 };
 
 export type ApiCreateMeetingTypeError = ApiCreateMeetingTypeErrors[keyof ApiCreateMeetingTypeErrors];

@@ -5,7 +5,7 @@ require_relative 'test_helper'
 class SmokeTest < Minitest::Test
   include Rack::Test::Methods
 
-  def app = App
+  def app = VALIDATED_APP
 
   def test_health_returns_ok
     get '/api/health'

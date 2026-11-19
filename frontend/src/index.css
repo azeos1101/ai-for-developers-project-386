@@ -89,3 +89,35 @@ a {
   color: var(--color-text-muted);
   font-size: 15px;
 }
+
+/* Список типов встреч на странице записи. */
+.meeting-types {
+  display: grid;
+  gap: 16px;
+  text-align: left;
+  margin-bottom: 32px;
+}
+
+.meeting-type-card {
+  padding: 20px 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.meeting-type-card h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.meeting-type-card__description {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.meeting-type-card__duration {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-accent-dark);
+}

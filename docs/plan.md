@@ -96,4 +96,4 @@
 
 ## Открытые вопросы
 
-1. VPS `.44`: способ доступа для выката (SSH-пользователь, есть ли там reverse-proxy/TLS — Caddy/Traefik/nginx), домен.
+1. VPS `.44`: способ доступа для выката (SSH-пользователь без sudo, есть ли там reverse-proxy/TLS — Caddy/Traefik/nginx). Домен для тестов: **hexlet-ai-386.6411130.xyz**.

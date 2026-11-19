@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint --deny-warnings src",
+    "generate:sdk": "openapi-ts",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -14,10 +15,12 @@
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "^0.99.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "oxlint": "^1.94.0",
+    "typescript": "^6.0.3",
     "vite": "^8.3.6"
   }
 }

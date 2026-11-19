@@ -79,5 +79,5 @@ description = "Vite dev-сервер, прокси /api на :4567"
 run = "npm run dev --prefix frontend"
 
 [tasks.run]
-description = "Сервер на http://localhost:4567"
-run = "bundle exec rackup -p 4567"
+description = "Сервер на http://localhost:4567 (порт из переменной PORT, ADR-0001)"
+run = 'bundle exec rackup -p "${PORT:-4567}"'

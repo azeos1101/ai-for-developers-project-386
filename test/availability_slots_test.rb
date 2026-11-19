@@ -71,6 +71,14 @@ class AvailabilitySlotsGridTest < Minitest::Test
     assert_equal(DAY30_ENDS, body['slots'].map { |slot| slot['end'] })
   end
 
+  def test_last_window_day_returns_full_sixty_minute_grid
+    create_type(id: 'consult', duration: 60)
+
+    body = request_slots('consult', moscow_date(13))
+
+    assert_equal(DAY60_STARTS, body['slots'].map { |slot| slot['start'] })
+  end
+
   def test_today_starts_earlier_than_current_time_are_not_available
     create_type(id: 'consult', duration: 60)
 

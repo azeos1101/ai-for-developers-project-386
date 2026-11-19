@@ -25,6 +25,17 @@ VALIDATED_APP = Committee::Middleware::RequestValidation.new(
   raise: true
 )
 
+# Обёртка только со сверкой ответов. RequestValidation с raise: true отбивает некорректные
+# запросы до приложения, а негативные тесты ждут 422/409/404 от самого приложения (согласование
+# тикета #22): они гоняются через этот вариант, ответ всё равно сверяется с openapi/openapi.yaml.
+RESPONSE_ONLY_APP = Committee::Middleware::ResponseValidation.new(
+  App,
+  schema_path: OPENAPI_PATH,
+  strict_reference_validation: true,
+  validate_success_only: false,
+  raise: true
+)
+
 # Общие ассерты и фикстуры rack-тестов.
 module Minitest
   class Test

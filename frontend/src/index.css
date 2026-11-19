@@ -121,3 +121,100 @@ a {
   font-weight: 600;
   color: var(--color-accent-dark);
 }
+
+/* Страница предстоящих событий (тикет #22): форма создания типа и список типов. */
+.events-page {
+  text-align: left;
+}
+
+.events-block + .events-block {
+  margin-top: 48px;
+}
+
+.events-form {
+  display: grid;
+  gap: 8px;
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.events-form__banner {
+  margin: 0 0 8px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 15px;
+}
+
+.events-form__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.events-form__field {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.events-form__field[aria-invalid='true'] {
+  border-color: #b91c1c;
+  outline: 2px solid #fecaca;
+}
+
+.events-form .button {
+  margin-top: 16px;
+  border: none;
+  cursor: pointer;
+  justify-self: start;
+}
+
+.events-form .button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.event-type-card {
+  padding: 20px 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.event-type-card + .event-type-card {
+  margin-top: 16px;
+}
+
+.event-type-card__title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.event-type-card__duration {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-accent-dark);
+}
+
+/* Id типа встречи в интерфейсе показывается моноширинно (эталон «Предстоящих событий»). */
+.event-type-card__id {
+  margin: 0 0 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+.event-type-card__description {
+  margin: 0;
+  font-size: 16px;
+}

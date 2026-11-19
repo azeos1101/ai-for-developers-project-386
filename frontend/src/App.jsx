@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router'
 import BookingPage from './pages/BookingPage.jsx'
+import EventsPage from './pages/EventsPage.jsx'
 import MainPage from './pages/MainPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 
@@ -9,6 +10,7 @@ function App() {
       <Routes>
         <Route path="/" element={<MainPage />} />
         <Route path="/booking" element={<BookingPage />} />
+        <Route path="/events" element={<EventsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>

@@ -51,7 +51,7 @@ run = ["ast-grep test --skip-snapshot-tests", "ast-grep scan"]
 
 [tasks."lint:openapi"]
 description = "Линт OpenAPI"
-run = "vacuum lint --details openapi/openapi.yaml"
+run = "vacuum lint --no-banner --errors --details openapi/openapi.yaml"
 
 [tasks."lint:js"]
 description = "oxlint (фронтенд)"

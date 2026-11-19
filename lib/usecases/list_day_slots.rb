@@ -31,14 +31,14 @@ module UseCases
 
     private
 
-    # Один слот = старт + длительность типа в HH:MM по Moscow; прошедшие старты и
-    # будущие брони помечает недоступными следующие тикеты.
+    # Один слот = старт + длительность типа в HH:MM по Moscow; доступен старт, не раньше
+    # текущего момента (правило окна). Брони пометят занятыми будущие тикеты.
     def build_slots(starts, duration_min)
       starts.map do |start_time|
         {
           start: moscow_hhmm(start_time),
           end: moscow_hhmm(start_time + (duration_min * 60)),
-          available: true
+          available: start_time >= @now_utc
         }
       end
     end

@@ -2,12 +2,15 @@
 
 require_relative 'test_helper'
 
-# GET /api/availability — сетка стартов дня (спецификация #19, user story 7, тикет #24):
-# только старты шагом 30 минут, чей слот целиком помещается в рабочие часы 09:00–18:00
-# Europe/Moscow. Ожидаемые списки — фикстура из правил, а не из реализации: тип 60 минут
-# ⇒ старты 09:00…17:00 (17 штук, 17:30 в ответе нет), тип 30 минут ⇒ 09:00…17:30 (18).
-# Дата берётся на 2 дня вперёд от сегодня (Moscow) — полный будущий день окна не зависит
-# от часов прогона. Формат ответа сверяет комитет по openapi/openapi.yaml.
+# GET /api/availability — сетка стартов дня и доступность стартов сегодняшнего дня
+# (спецификация #19, user stories 7–8, тикет #24): только старты шагом 30 минут, чей слот
+# целиком помещается в рабочие часы 09:00–18:00 Europe/Moscow. Ожидаемые списки — фикстура
+# из правил, а не из реализации: тип 60 минут ⇒ старты 09:00…17:00 (17 штук, 17:30 в ответе
+# нет), тип 30 минут ⇒ 09:00…17:30 (18). Сетка берётся на 2 дня вперёд от сегодня (Moscow) —
+# полный будущий день окна не зависит от часов прогона. Статусы сегодня проверяются на
+# фиксированном «сейчас» (полдень Moscow через Time.stub — эквивалент injectable now в
+# use-case): старты до полудня — available: false, от полудня — true, ожидаемые пары заданы
+# буквально по правилам. Формат ответа сверяет комитет по openapi/openapi.yaml.
 class AvailabilitySlotsGridTest < Minitest::Test
   include Rack::Test::Methods
 
@@ -34,6 +37,16 @@ class AvailabilitySlotsGridTest < Minitest::Test
     14:30 15:00 15:30 16:00 16:30 17:00 17:30 18:00
   ].freeze
 
+  # Фикстура правил: старты сегодняшнего дня на «сейчас» = полдень Moscow. Слот целиком
+  # в часах, но старт раньше текущего момента ⇒ available: false; старт от 12:00 — true.
+  DAY60_STATUSES_AT_NOON = {
+    '09:00' => false, '09:30' => false, '10:00' => false, '10:30' => false,
+    '11:00' => false, '11:30' => false, '12:00' => true, '12:30' => true,
+    '13:00' => true, '13:30' => true, '14:00' => true, '14:30' => true,
+    '15:00' => true, '15:30' => true, '16:00' => true, '16:30' => true,
+    '17:00' => true
+  }.freeze
+
   def app = VALIDATED_APP
 
   def setup
@@ -56,6 +69,21 @@ class AvailabilitySlotsGridTest < Minitest::Test
 
     assert_equal(DAY30_STARTS, body['slots'].map { |slot| slot['start'] })
     assert_equal(DAY30_ENDS, body['slots'].map { |slot| slot['end'] })
+  end
+
+  def test_today_starts_earlier_than_current_time_are_not_available
+    create_type(id: 'consult', duration: 60)
+
+    Time.stub(:now, moscow_noon_today_utc) do
+      get '/api/availability', { date: moscow_date(0), meeting_type_id: 'consult' }
+    end
+
+    assert_equal 200, last_response.status
+
+    body = JSON.parse(last_response.body)
+    statuses = body['slots'].to_h { |slot| [slot['start'], slot['available']] }
+
+    assert_equal DAY60_STATUSES_AT_NOON, statuses
   end
 
   private
@@ -83,5 +111,12 @@ class AvailabilitySlotsGridTest < Minitest::Test
   # Дата окна на offset дней от сегодняшнего дня по Moscow (окно начинается сегодня).
   def moscow_date(offset)
     ((Time.now.getutc + MOSCOW_UTC_OFFSET) + (offset * 24 * 3600)).strftime('%Y-%m-%d')
+  end
+
+  # Фиксированное «сейчас»: полдень сегодняшнего дня по Moscow моментом UTC.
+  def moscow_noon_today_utc
+    today = (Time.now.getutc + MOSCOW_UTC_OFFSET).to_date
+
+    Time.utc(today.year, today.month, today.day, 12) - MOSCOW_UTC_OFFSET
   end
 end

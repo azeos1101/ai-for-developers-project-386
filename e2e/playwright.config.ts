@@ -16,6 +16,9 @@ const SLOTS_PORT = 4583
 // Пятый сервер на 4584 — сквозной сценарий бронирования (#25): он создаёт брони, а память
 // процесса общая на весь сервер — соседние спеки сверяют счётчики и списки строго.
 const BOOKING_FLOW_PORT = 4584
+// Шестой сервер на 4585 — конфликт слота (#26): свои брони и строгая сверка занятых
+// слотов, чтобы не мешать сквозному сценарию на 4584 и сверкам соседних спеков.
+const BOOKING_CONFLICT_PORT = 4585
 
 const server = (port: number) => ({
   command: 'mise run run',
@@ -35,5 +38,12 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${PORT}`,
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: [server(PORT), server(ISOLATED_PORT), server(CALENDAR_PORT), server(SLOTS_PORT), server(BOOKING_FLOW_PORT)],
+  webServer: [
+    server(PORT),
+    server(ISOLATED_PORT),
+    server(CALENDAR_PORT),
+    server(SLOTS_PORT),
+    server(BOOKING_FLOW_PORT),
+    server(BOOKING_CONFLICT_PORT),
+  ],
 })

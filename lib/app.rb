@@ -94,7 +94,7 @@ class App < Sinatra::Base
   # Контракт: POST /api/bookings → 201 Booking (полная бронь: id, денормализованный
   # meeting_type_name, end, created_at ISO 8601); 422 validation — формат полей, дата вне
   # окна, старт не на сетке/в часах/в прошлом, неизвестный meeting_type_id; 409 conflict —
-  # пересечение интервалов (матрица #19, правило пересечений — следующий тикет).
+  # пересечение интервалов, проверка и запись атомарны (матрица #19, правило — тикет #26).
   post '/api/bookings' do
     result = UseCases::CreateBooking.new(store: settings.store).call(request.body.read)
 

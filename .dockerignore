@@ -1,0 +1,49 @@
+# Контекст сборки — только то, что читает Dockerfile: Gemfile*, config.ru, lib/, frontend/.
+.git
+.github
+.agents
+.claude
+.opencode
+.hypothesis
+.schemathesis
+
+# Зависимости и артефакты: в образе ставятся и собираются заново.
+**/node_modules/
+frontend/dist/
+contract/tsp-output/
+openapi/
+contract/
+e2e/
+test/
+docs/
+script/
+views/
+public/
+ast-grep/
+tools/
+
+# Секреты и локальные настройки: не должны попадать в образ и его историю.
+.env
+.env.*
+*.key
+*.pem
+*.p12
+id_rsa*
+.secrets/
+
+# Служебные файлы тулчейна и мусор.
+.hk/
+*.log
+.hypothesis/
+Makefile
+mise.toml
+schemathesis.toml
+sgconfig.yml
+skills-lock.json
+release-please-config.json
+.release-please-manifest.json
+.rubocop.yml
+AGENTS.md
+GLOSSARY.md
+Dockerfile
+.dockerignore

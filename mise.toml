@@ -141,6 +141,61 @@ fi
 st run openapi/openapi.yaml --url "http://localhost:$PORT"
 '''
 
+# Шаг 6 (#33): дымовая проверка Docker-образа. Сервер контейнера слушает PORT внутри него,
+# поэтому контейнер публикуется на тот же порт хоста (только 127.0.0.1). Контейнер убивается
+# в любом исходе (trap) — образ и проверка не оставляют мусора.
+[tasks."docker:smoke"]
+description = "Docker: собрать образ, запустить с нестандартным PORT и проверить /api/health, SPA на / и /events"
+run = '''
+set -e
+IMAGE="hexlet-ai-386:smoke"
+NAME="hexlet-ai-386-smoke"
+PORT="${SMOKE_PORT:-4595}"
+docker build -t "$IMAGE" .
+docker rm -f "$NAME" >/dev/null 2>&1 || true
+cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
+trap cleanup EXIT
+docker run -d --name "$NAME" -e PORT="$PORT" -p "127.0.0.1:$PORT:$PORT" "$IMAGE" >/dev/null
+check_page() {
+  path="$1"
+  body="$(curl -fsS "http://127.0.0.1:$PORT$path")" || {
+    echo "docker:smoke: GET $path не 200; fix: смотри docker logs $NAME"
+    docker logs "$NAME"
+    exit 1
+  }
+  # SPA = index.html из сборки: mount-точка React и подключённые /assets/*.
+  case "$body" in *'id="root"'*) ;; *) echo "docker:smoke: GET $path отдал не SPA (нет id=\"root\"); fix: проверь COPY frontend/dist в Dockerfile"; exit 1 ;; esac
+  case "$body" in *'/assets/'*) ;; *) echo "docker:smoke: GET $path отдал не SPA (нет /assets/); fix: проверь COPY frontend/dist в Dockerfile"; exit 1 ;; esac
+}
+READY=0
+for _ in $(seq 1 120); do
+  if [ "$(curl -fsS "http://127.0.0.1:$PORT/api/health" 2>/dev/null || true)" = '{"status":"ok"}' ]; then
+    READY=1
+    break
+  fi
+  sleep 0.5
+done
+if [ "$READY" != 1 ]; then
+  echo "docker:smoke: /api/health не ответил за 60s на нестандартном PORT=$PORT; fix: проверь CMD и проброс PORT в Dockerfile"
+  docker logs "$NAME"
+  exit 1
+fi
+check_page /
+check_page /events
+echo "docker:smoke: OK — /api/health, SPA на / и /events, PORT=$PORT"
+'''
+
+[tasks."test:e2e:remote"]
+description = "Браузерные e2e против развёрнутого сервиса (адрес из E2E_BASE_URL, webServer не поднимается)"
+dir = "e2e"
+run = '''
+if [ -z "${E2E_BASE_URL:-}" ]; then
+  echo "test:e2e:remote: не задан E2E_BASE_URL; fix: E2E_BASE_URL=https://example.com mise run test:e2e:remote"
+  exit 1
+fi
+npx --no-install playwright test
+'''
+
 [tasks.build]
 description = "Сборка фронтенда в frontend/dist"
 run = "npm run build --prefix frontend"

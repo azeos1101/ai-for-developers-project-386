@@ -15,5 +15,9 @@ jobs:
     steps:
       # Анализирует коммиты Conventional Commits в master и создаёт или
       # обновляет release-PR с changelog и версией; слияние PR тегаит релиз.
-      # Manifest и конфиг action бустрапит сам в первом release-PR.
+      # Конфиг и manifest лежат в корне репозитория: action v4 без них падает,
+      # бутстрап — отдельная CLI-команда release-please bootstrap, не action.
       - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

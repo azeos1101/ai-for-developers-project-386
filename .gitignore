@@ -5,4 +5,5 @@ contract/tsp-output/
 e2e/node_modules/
 test-results/
 playwright-report/
+.schemathesis/
 *.log

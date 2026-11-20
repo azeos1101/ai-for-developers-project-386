@@ -25,6 +25,8 @@ mise run install   # зависимости: гемы, компилятор ко
 mise run generate  # TypeSpec → OpenAPI → SDK в frontend/src/sdk/ (нужен только при смене контракта)
 ```
 
+`mise run install` ставит и Schemathesis для `check:contract`: `pipx` и `pipx:schemathesis` зафиксированы в `[tools]` mise.toml.
+
 ## Использование
 
 ```bash
@@ -33,6 +35,7 @@ mise run run    # сервер на http://localhost:4567
 mise run dev    # Vite dev-сервер с прокси /api на :4567
 mise run setup  # демо-данные в уже запущенный сервис через его API (адрес из переменной PORT)
 mise run check  # линтеры + тесты + сверка сгенерированного
+mise run check:contract  # Schemathesis: фаззинг запущенного сервера по openapi/openapi.yaml (в check не входит)
 ```
 
 `make` — тонкая обёртка над этими командами (`make install`, `make generate`, `make run`, `make test`, `make lint`, `make check`).

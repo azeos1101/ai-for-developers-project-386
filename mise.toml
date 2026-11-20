@@ -7,6 +7,9 @@ vacuum = "0.41.0"
 hk = "2.13.0"
 pkl = "0.33.0"
 gh = "2.105.0"
+# Schemathesis (check:contract) — Python-CLI: pipx ставится как tool, сам пакет — через pipx-бэкенд с фиксацией версии
+pipx = "1.14.0"
+"pipx:schemathesis" = "4.33.4"
 
 [tasks.install]
 description = "Зависимости: гемы, компилятор контракта, фронтенд и e2e"
@@ -98,6 +101,45 @@ depends = ["lint:ruby", "lint:ast", "lint:openapi", "lint:js", "lint:types", "li
 [tasks.check]
 description = "Всё перед коммитом: линт, тесты (включая e2e), сгенерированное"
 depends = ["lint", "test", "test:e2e", "generate:check"]
+
+# Отдельная проверка вне check (спецификация #19, тикет #30): фаззер меняет состояние
+# сервера, поэтому сервер поднимается заново на своём порту и убивается в любом исходе (trap).
+[tasks."check:contract"]
+description = "Schemathesis: фаззинг запущенного сервера по openapi/openapi.yaml (в check не входит)"
+run = '''
+set -e
+PORT="${PORT:-4590}"
+LOG="$(mktemp)"
+SERVER_PID=""
+cleanup() {
+  if [ -n "$SERVER_PID" ]; then
+    kill "$SERVER_PID" 2>/dev/null || true
+    wait "$SERVER_PID" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT
+bundle exec rackup -p "$PORT" >"$LOG" 2>&1 &
+SERVER_PID=$!
+READY=0
+for _ in $(seq 1 60); do
+  if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+    echo "check:contract: rackup на :$PORT завершился сразу; fix: смотри лог сервера ниже"
+    cat "$LOG"
+    exit 1
+  fi
+  if curl -fsS "http://localhost:$PORT/api/health" >/dev/null 2>&1; then
+    READY=1
+    break
+  fi
+  sleep 0.5
+done
+if [ "$READY" != 1 ]; then
+  echo "check:contract: сервер на :$PORT не ответил на /api/health за 30s; fix: смотри лог сервера ниже"
+  cat "$LOG"
+  exit 1
+fi
+st run openapi/openapi.yaml --url "http://localhost:$PORT"
+'''
 
 [tasks.build]
 description = "Сборка фронтенда в frontend/dist"

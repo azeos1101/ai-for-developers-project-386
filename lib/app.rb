@@ -9,6 +9,7 @@ require_relative 'usecases/list_meeting_types'
 require_relative 'usecases/list_days_availability'
 require_relative 'usecases/list_day_slots'
 require_relative 'usecases/create_booking'
+require_relative 'usecases/list_bookings'
 
 class App < Sinatra::Base
   set :public_folder, File.expand_path('../frontend/dist', __dir__)
@@ -31,64 +32,30 @@ class App < Sinatra::Base
 
   # Контракт: GET /api/meeting-types → 200 MeetingType[] без ошибок, порядок заведения.
   get '/api/meeting-types' do
-    content_type :json
-    UseCases::ListMeetingTypes.new(store: settings.store).call.value.to_json
+    render_result UseCases::ListMeetingTypes.new(store: settings.store).call
   end
 
   # Контракт: POST /api/meeting-types → 201 MeetingType; 422 validation; 409 conflict (занят id).
   post '/api/meeting-types' do
-    result = UseCases::CreateMeetingType.new(store: settings.store).call(request.body.read)
-
-    case result
-    when UseCases::Success
-      status 201
-      content_type :json
-      result.value.to_json
-    when UseCases::Failure
-      status_code, code = FAILURE_BY_CODE.fetch(result.code)
-      status status_code
-      content_type :json
-      { code: code, message: result.message }.to_json
-    end
+    render_result UseCases::CreateMeetingType.new(store: settings.store).call(request.body.read),
+                  success_status: 201
   end
 
   # Контракт: GET /api/availability?date=&meeting_type_id= → 200 Availability (только влезающие
   # в часы старты шагом 30 минут); неизвестный тип — 404 not_found; дата в прошлом, вне окна
   # или неверного формата — 422 validation (спецификация #19, слоты дня — тикет #24).
   get '/api/availability' do
-    result = UseCases::ListDaySlots.new(store: settings.store).call(
+    render_result UseCases::ListDaySlots.new(store: settings.store).call(
       date: params['date'],
       meeting_type_id: params['meeting_type_id']
     )
-
-    case result
-    when UseCases::Success
-      content_type :json
-      result.value.to_json
-    when UseCases::Failure
-      status_code, code = FAILURE_BY_CODE.fetch(result.code)
-      status status_code
-      content_type :json
-      { code: code, message: result.message }.to_json
-    end
   end
 
   # Контракт: GET /api/availability/days?meeting_type_id= → 200 AvailabilitySummary (все 14 дней
   # окна по возрастанию, включая нули); неизвестный тип — 404 not_found; неверный формат
   # параметра — 422 validation (спецификация #19, счётчики по дням — тикет #23).
   get '/api/availability/days' do
-    result = UseCases::ListDaysAvailability.new(store: settings.store).call(params['meeting_type_id'])
-
-    case result
-    when UseCases::Success
-      content_type :json
-      result.value.to_json
-    when UseCases::Failure
-      status_code, code = FAILURE_BY_CODE.fetch(result.code)
-      status status_code
-      content_type :json
-      { code: code, message: result.message }.to_json
-    end
+    render_result UseCases::ListDaysAvailability.new(store: settings.store).call(params['meeting_type_id'])
   end
 
   # Контракт: POST /api/bookings → 201 Booking (полная бронь: id, денормализованный
@@ -96,19 +63,15 @@ class App < Sinatra::Base
   # окна, старт не на сетке/в часах/в прошлом, неизвестный meeting_type_id; 409 conflict —
   # пересечение интервалов, проверка и запись атомарны (матрица #19, правило — тикет #26).
   post '/api/bookings' do
-    result = UseCases::CreateBooking.new(store: settings.store).call(request.body.read)
+    render_result UseCases::CreateBooking.new(store: settings.store).call(request.body.read),
+                  success_status: 201
+  end
 
-    case result
-    when UseCases::Success
-      status 201
-      content_type :json
-      result.value.to_json
-    when UseCases::Failure
-      status_code, code = FAILURE_BY_CODE.fetch(result.code)
-      status status_code
-      content_type :json
-      { code: code, message: result.message }.to_json
-    end
+  # Контракт: GET /api/bookings → 200 Booking[] без ошибок: только брони со стартом строго
+  # позже текущего момента (Europe/Moscow), отсортированы по дате и началу по возрастанию;
+  # пустой массив, когда записей нет (спецификация #19, тикет #27).
+  get '/api/bookings' do
+    render_result UseCases::ListBookings.new(store: settings.store).call
   end
 
   # ADR-0001: catch-all на все GET вне /api — отдать index.html, карту маршрутов рисует react-router.
@@ -133,6 +96,21 @@ class App < Sinatra::Base
   end
 
   helpers do
+    # Единый рендер результата use-case (спецификация #19): Success — успех с телом значения,
+    # Failure — статус из FAILURE_BY_CODE и тело {code, message} по модели отказа контракта.
+    def render_result(result, success_status: 200)
+      if result.is_a?(UseCases::Success)
+        status success_status
+        body = result.value
+      else
+        status_code, code = FAILURE_BY_CODE.fetch(result.code)
+        status status_code
+        body = { code: code, message: result.message }
+      end
+      content_type :json
+      body.to_json
+    end
+
     def api_request?
       path = request.path_info
       path == '/api' || path.start_with?('/api/')

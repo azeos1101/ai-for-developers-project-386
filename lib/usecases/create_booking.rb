@@ -6,16 +6,18 @@ require_relative '../usecases'
 require_relative 'slot_grid'
 
 module UseCases
-  # POST /api/bookings: создание брони слота (спецификация #19, тикет #25). Проверки —
+  # POST /api/bookings: создание брони слота (спецификация #19, тикеты #25 и #26). Проверки —
   # ровно матрица контракта: формат полей BookingInput (name ≥ 1, email ≥ 3, значения не
   # тримятся), неизвестный meeting_type_id, дата вне окна или кривого формата, старт не
   # на сетке 30 минут, не влезающий в рабочие часы или в прошлом — все :validation.
   # Правила окна и сетки — общие с доступностью (SlotGrid), расхождение невозможно.
-  # Пересечение интервалов добавит следующий тикет: проверка и запись уже атомарны
-  # (Store под мьютексом). Ответ — полная бронь: денормализованное meeting_type_name,
-  # end = start + длительность, created_at ISO 8601.
+  # Пересечение интервалов — :conflict (409): проверка и запись одной атомарной операцией
+  # в Store под мьютексом, поэтому гонка параллельных запросов даёт ровно одну бронь.
+  # Ответ — полная бронь: денормализованное meeting_type_name, end = start + длительность,
+  # created_at ISO 8601.
   class CreateBooking
     VALIDATION_MESSAGE = 'Не удалось создать бронь. Проверьте поля и время.'
+    CONFLICT_MESSAGE = 'Это время уже занято. Выберите другое время.'
 
     def initialize(store:, now: Time.now)
       @store = store
@@ -32,7 +34,7 @@ module UseCases
       day, start_time = slot_or_nil(input, type[:duration])
       return Failure.new(:validation, VALIDATION_MESSAGE) if start_time.nil?
 
-      Success.new(book(type, day, start_time, input))
+      book_or_conflict(type, day, start_time, input)
     end
 
     private
@@ -80,13 +82,23 @@ module UseCases
       start_time
     end
 
-    # Запись брони в Store под мьютексом (id целый, последовательный): тело Booking по
-    # контракту с денормализованным meeting_type_name, end = старт + длительность по Moscow
-    # и created_at — момент создания в ISO 8601.
+    # Атомарная проверка пересечения и запись в Store: без пересечения — Success с бронью,
+    # пересечение — :conflict (409 по матрице контракта), хранилище не тронуто.
+    def book_or_conflict(type, day, start_time, input)
+      booking = book(type, day, start_time, input)
+      return Failure.new(:conflict, CONFLICT_MESSAGE) if booking == :conflict
+
+      Success.new(booking)
+    end
+
+    # Запись брони в Store одной атомарной операцией с проверкой пересечения (id целый,
+    # последовательный): тело Booking по контракту с денормализованным meeting_type_name,
+    # end = старт + длительность по Moscow и created_at — момент создания в ISO 8601.
+    # Пересечение — :conflict от Store, ничего не записано.
     def book(type, day, start_time, input)
       end_time = start_time + (type[:duration] * 60)
 
-      @store.add_booking(
+      @store.add_booking_if_free(
         meeting_type_id: type[:id], meeting_type_name: type[:name], duration: type[:duration],
         name: input['name'], email: input['email'], date: day.strftime('%Y-%m-%d'),
         start: SlotGrid.moscow_hhmm(start_time), end: SlotGrid.moscow_hhmm(end_time),

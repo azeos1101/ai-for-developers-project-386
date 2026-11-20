@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
+require 'date'
+require_relative 'usecases/slot_grid'
+
 # Хранилище в памяти процесса: типы встреч и брони живут до перезапуска (ограничение названо в README).
-# Списки хранятся в порядке заведения, мьютекс делает проверку занятости id и добавление атомарными.
+# Списки хранятся в порядке заведения, мьютекс делает проверку занятости id, проверку пересечений
+# и добавление атомарными.
 class Store
   def initialize
     @mutex = Mutex.new
@@ -29,11 +33,14 @@ class Store
     end
   end
 
-  # Заносит бронь под следующий целый id. Под тем же мьютексом, что и проверка:
-  # в следующий тикет сюда добавится проверка пересечений — проверка и создание
-  # останутся одной атомарной операцией (гонка даёт ровно одну бронь).
-  def add_booking(booking)
+  # Одна атомарная операция под мьютексом: находит пересечения среди существующих броней
+  # календарной даты (slot_conflicts?) и только без пересечения заносит бронь под следующий
+  # целый id. Поэтому гонка параллельных POST даёт ровно одну бронь (README). Возвращает
+  # сохранённую бронь или :conflict, ничего не записав.
+  def add_booking_if_free(booking)
     @mutex.synchronize do
+      return :conflict if slot_conflicts?(booking)
+
       stored = booking.merge(id: @next_booking_id)
       @next_booking_id += 1
       @bookings << stored
@@ -48,5 +55,20 @@ class Store
       @bookings.clear
       @next_booking_id = 1
     end
+  end
+
+  private
+
+  # Пересекается ли интервал брони [start, end) календарной даты с какой-либо из сохранённых
+  # броней (даты HH:MM — тот же день). Правила интервалов — SlotGrid, тот же источник, что
+  # и у доступности: пересечение с любой бронью любого типа, примыкание end == start
+  # разрешено. Вызывать только под @mutex: читает @bookings без блокировки.
+  def slot_conflicts?(booking)
+    day = Date.iso8601(booking[:date])
+    slot_start = UseCases::SlotGrid.grid_start_time(day, booking[:start])
+    slot_end = UseCases::SlotGrid.grid_start_time(day, booking[:end])
+    intervals = UseCases::SlotGrid.day_booking_intervals(day, @bookings)
+
+    UseCases::SlotGrid.overlaps_any?(slot_start, slot_end, intervals)
   end
 end

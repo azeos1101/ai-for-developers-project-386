@@ -10,6 +10,7 @@ API проектируется контрактом: `contract/main.tsp` (TypeSp
 - `mise run check` — линт + тесты (rack + Playwright e2e) + сверка сгенерированного. **Задача не готова, пока `mise run check` не прошёл.** Git-хуки (`hk.pkl`): pre-commit — `lint`, pre-push — `check`.
 - `mise run test` — только тесты; `mise run lint` — только линтеры; `mise run generate` — пересобрать OpenAPI и SDK.
 - `mise run run` — сервер на http://localhost:4567 (порт из переменной `PORT`); `mise run dev` — Vite с прокси `/api` на :4567; `mise run build` — сборка фронтенда.
+- `mise run docker:smoke` — собрать Docker-образ и проверить запуск контейнера; `E2E_BASE_URL=<ссылка> mise run test:e2e:remote` — e2e против развёрнутого сервиса (файлы выката — `deploy/`).
 - CI (`.github/workflows/check.yml`) на каждый push: `install` → `build` → `check`.
 
 ## Правила

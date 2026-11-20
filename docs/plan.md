@@ -20,6 +20,8 @@
 
 **2026-11-20:** шаг 5 ✅ (этап E): тикеты #20–#32 реализованы Qwen через `implement-spec`, ветка `spec-19-booking` влита в master (bf43a6b); 57 rack-тестов (260 проверок), 30 e2e, Schemathesis (`mise run check:contract`) зелёный. Ревью Kimi нашло 2 ошибки валидации — исправлены до влития. release-please: ветка релиза создаётся; PR ждёт разрешения Actions создавать PR в настройках репозитория. Дальше — шаг 6 (Docker, деплой на VPS, Render в README).
 
+**2026-11-20:** шаг 6 (этап F, issue #33): ветка `step-6-docker` — многоэтапный `Dockerfile` (node 25.9.0 → ruby 3.3.11-slim, только production-гемы, не-root, старт по `PORT`) + `docker:smoke`; e2e удалённого сценария (`E2E_BASE_URL` + `test:e2e:remote`, работает и на непустом хранилище); шаблон MCP Render в `opencode.json` (ключ из `{env:RENDER_API_KEY}`); `deploy/` — compose, Caddyfile и инструкция для человека. Осталось: человек выкатывает образ на VPS (`.44`) по `deploy/README.md`, после чего контролёр проверяет сценарий по публичной ссылке.
+
 Исходная таблица (на начало работ):
 
 | Шаг | Что требуется | Есть | Не хватает |

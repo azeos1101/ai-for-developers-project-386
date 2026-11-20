@@ -28,6 +28,15 @@ const HEADER_PORT = 4587
 // Девятый сервер на 4588 — финальный сквозной сценарий (#32): он создаёт свою бронь и сверяет
 // список «Предстоящие события» строго по одной карточке, поэтому процесс только свой.
 const BOOKING_JOURNEY_PORT = 4588
+// Десятый сервер на 4589 — спек удалённого сценария (#33): тот же флоу, что гоняется по
+// E2E_BASE_URL против развёрнутого сервиса, локально проверяется на своём чистом процессе.
+const REMOTE_PORT = 4589
+
+// Шаг 6 (#33): проверка развёрнутого сервиса. Если задан E2E_BASE_URL, webServer не
+// поднимается и гоняется только remote-journey.spec.ts по этому адресу (сервис уже запущен
+// вне Playwright — например, контейнер из Dockerfile). Без перемены — обычный прогон с
+// локальными серверами ниже.
+const REMOTE_BASE_URL = process.env.E2E_BASE_URL
 
 const server = (port: number) => ({
   command: 'mise run run',
@@ -44,18 +53,27 @@ export default defineConfig({
   fullyParallel: true,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: `http://127.0.0.1:${PORT}`,
+    baseURL: REMOTE_BASE_URL ?? `http://127.0.0.1:${PORT}`,
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: [
-    server(PORT),
-    server(ISOLATED_PORT),
-    server(CALENDAR_PORT),
-    server(SLOTS_PORT),
-    server(BOOKING_FLOW_PORT),
-    server(BOOKING_CONFLICT_PORT),
-    server(UPCOMING_BOOKINGS_PORT),
-    server(HEADER_PORT),
-    server(BOOKING_JOURNEY_PORT),
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      ...(REMOTE_BASE_URL ? { testMatch: 'remote-journey.spec.ts' } : {}),
+    },
   ],
+  webServer: REMOTE_BASE_URL
+    ? undefined
+    : [
+        server(PORT),
+        server(ISOLATED_PORT),
+        server(CALENDAR_PORT),
+        server(SLOTS_PORT),
+        server(BOOKING_FLOW_PORT),
+        server(BOOKING_CONFLICT_PORT),
+        server(UPCOMING_BOOKINGS_PORT),
+        server(HEADER_PORT),
+        server(BOOKING_JOURNEY_PORT),
+        server(REMOTE_PORT),
+      ],
 })

@@ -151,6 +151,7 @@ set -e
 IMAGE="hexlet-ai-386:smoke"
 NAME="hexlet-ai-386-smoke"
 PORT="${SMOKE_PORT:-4595}"
+PUBLIC_HOST="hexlet-ai-386.6411130.xyz"
 docker build -t "$IMAGE" .
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
@@ -180,9 +181,23 @@ if [ "$READY" != 1 ]; then
   docker logs "$NAME"
   exit 1
 fi
+# Боевой Host: за обратным прокси (Caddy) запросы приходят с доменом, а не с localhost.
+# Sinatra в development пропускает только localhost-хосты (host_authorization) и отвечает
+# 403 «Host not permitted» на боевой домен — контейнер обязан отвечать любому Host.
+check_public_host() {
+  path="$1"
+  code="$(curl -s -o /dev/null -w '%{http_code}' -H "Host: $PUBLIC_HOST" "http://127.0.0.1:$PORT$path")"
+  if [ "$code" != 200 ]; then
+    echo "docker:smoke: GET $path с Host: $PUBLIC_HOST вернул $code, ожидали 200; fix: в runtime-стадии Dockerfile нужен ENV RACK_ENV=production — в development Sinatra отдаёт 403 Host not permitted для боевого домена"
+    docker logs "$NAME"
+    exit 1
+  fi
+}
 check_page /
 check_page /events
-echo "docker:smoke: OK — /api/health, SPA на / и /events, PORT=$PORT"
+check_public_host /api/health
+check_public_host /
+echo "docker:smoke: OK — /api/health, SPA на / и /events, боевой Host, PORT=$PORT"
 '''
 
 [tasks."test:e2e:remote"]

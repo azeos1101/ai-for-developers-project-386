@@ -1,0 +1,21 @@
+# Конфигурация фаззера Schemathesis для `mise run check:contract` (тикет #30).
+#
+# Проверка positive_data_acceptance (ST202) ждёт успеха от запросов, валидных по схеме,
+# но GET /api/availability и POST /api/bookings отклоняют их с 422 по правилам, которые
+# нельзя выразить в JSON Schema: они относительны текущего момента — 14-дневное окно
+# записи, старт в прошлом, старт не на сетке 30 минут или не влезающий в рабочие часы
+# 09:00–18:00 Europe/Moscow. Например, date=0000-01-01 и start=00:00 — корректные по
+# паттернам значения, вне окна/часов сервер отвечает 422 validation.
+#
+# Матрица @doc этих эндпоинтов (contract/main.tsp) объявляет 422 ровно за эти случаи,
+# а rack-тесты через committee сверяют матрицу с сервером. Здесь не отключение проверки
+# (см. `st explain ST202`), а декларация ожидаемых статусов по контракту для двух
+# операций; сверки схемы ответов, статусов, content-type и 405+Allow работают полностью.
+
+[[operations]]
+include-name = "GET /api/availability"
+checks.positive_data_acceptance.expected-statuses = ["2xx", "3xx", "401", "403", "404", "409", "429", "5xx", "422"]
+
+[[operations]]
+include-name = "POST /api/bookings"
+checks.positive_data_acceptance.expected-statuses = ["2xx", "3xx", "401", "403", "404", "409", "429", "5xx", "422"]

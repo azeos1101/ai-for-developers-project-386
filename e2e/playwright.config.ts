@@ -22,6 +22,9 @@ const BOOKING_CONFLICT_PORT = 4585
 // Седьмой сервер на 4586 — список предстоящих броней (#27): первому тесту нужно пустое
 // хранилище броней, а фикстуры создаются внутри файла — процесс только свой.
 const UPCOMING_BOOKINGS_PORT = 4586
+// Восьмой сервер на 4587 — шапка и заголовки (#28): фикстура создаёт тип для deep-link'а
+// подтверждения, чтобы не трогать строгие сверки составов списков на соседних портах.
+const HEADER_PORT = 4587
 
 const server = (port: number) => ({
   command: 'mise run run',
@@ -49,5 +52,6 @@ export default defineConfig({
     server(BOOKING_FLOW_PORT),
     server(BOOKING_CONFLICT_PORT),
     server(UPCOMING_BOOKINGS_PORT),
+    server(HEADER_PORT),
   ],
 })

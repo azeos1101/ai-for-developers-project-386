@@ -19,6 +19,9 @@ const BOOKING_FLOW_PORT = 4584
 // Шестой сервер на 4585 — конфликт слота (#26): свои брони и строгая сверка занятых
 // слотов, чтобы не мешать сквозному сценарию на 4584 и сверкам соседних спеков.
 const BOOKING_CONFLICT_PORT = 4585
+// Седьмой сервер на 4586 — список предстоящих броней (#27): первому тесту нужно пустое
+// хранилище броней, а фикстуры создаются внутри файла — процесс только свой.
+const UPCOMING_BOOKINGS_PORT = 4586
 
 const server = (port: number) => ({
   command: 'mise run run',
@@ -45,5 +48,6 @@ export default defineConfig({
     server(SLOTS_PORT),
     server(BOOKING_FLOW_PORT),
     server(BOOKING_CONFLICT_PORT),
+    server(UPCOMING_BOOKINGS_PORT),
   ],
 })

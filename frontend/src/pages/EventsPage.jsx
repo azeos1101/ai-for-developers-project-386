@@ -1,12 +1,31 @@
 import { useEffect, useState } from 'react'
-import { apiCreateMeetingType, apiListMeetingTypes } from '../sdk'
+import { apiCreateMeetingType, apiListBookings, apiListMeetingTypes } from '../sdk'
 
+/** @typedef {import('../sdk').Booking} Booking */
 /** @typedef {import('../sdk').MeetingType} MeetingType */
 
-// Страница предстоящих событий (GLOSSARY.md), тикет #22: пока два блока — форма создания
-// типа встречи и список типов. Бронирований и карточек здесь ещё нет (следующие тикеты),
-// как и глобальной шапки с заголовками страниц. К API — только через сгенерированный SDK.
-// Тексты баннеров фиксированы спецификацией #19; серверный message гостю не показываем.
+// Страница предстоящих событий (GLOSSARY.md), тикеты #22 и #27: блок карточек броней —
+// первым, затем блок управления типами (форма создания и список типов). Карточка брони
+// рисуется ровно в составе и порядке ответа GET /api/bookings — никакой клиентской
+// сортировки и фильтрации (user story 31, тикет #27). К API — только через SDK.
+// Тексты баннеров и пустых состояний фиксированы спецификацией #19; серверный message
+// гостю не показываем.
+
+// Момент создания брони показываем временем сервиса — Europe/Moscow (фиксированный UTC+3,
+// та же константа, что в серверном SlotGrid); строка «Создано: DD.MM.YYYY, HH:MM».
+const MOSCOW_OFFSET_MS = 3 * 60 * 60 * 1000
+
+/** created_at (ISO 8601) → «DD.MM.YYYY, HH:MM» по Europe/Moscow. */
+function createdCaption(/** @type {string} */ createdAtIso) {
+  const moscow = new Date(new Date(createdAtIso).getTime() + MOSCOW_OFFSET_MS)
+  /** @param {number} value */
+  const pad = (value) => String(value).padStart(2, '0')
+
+  return (
+    `${pad(moscow.getUTCDate())}.${pad(moscow.getUTCMonth() + 1)}.${moscow.getUTCFullYear()}, ` +
+    `${pad(moscow.getUTCHours())}:${pad(moscow.getUTCMinutes())}`
+  )
+}
 
 // Select длительности: от 30 до 240 минут включительно шагом 30 (правило контракта).
 const DURATION_OPTIONS = [30, 60, 90, 120, 150, 180, 210, 240]
@@ -48,6 +67,7 @@ const NETWORK_BANNER = 'Не удалось создать тип встречи
 
 function EventsPage() {
   const [types, setTypes] = useState(/** @type {MeetingType[] | null} */ (null))
+  const [bookings, setBookings] = useState(/** @type {Booking[] | null} */ (null))
   const [form, setForm] = useState(EMPTY_FORM)
   const [banner, setBanner] = useState(/** @type {string | null} */ (null))
   const [idHighlighted, setIdHighlighted] = useState(false)
@@ -59,6 +79,14 @@ function EventsPage() {
   useEffect(() => {
     apiListMeetingTypes().then((response) => {
       setTypes(response.data ?? [])
+    })
+  }, [])
+
+  // Порядок и состав карточек — как пришли из apiListBookings (user story 41): список
+  // кладётся в состояние без изменений, прошедшие брони уже отфильтрованы сервером.
+  useEffect(() => {
+    apiListBookings().then((response) => {
+      setBookings(response.data ?? [])
     })
   }, [])
 
@@ -121,6 +149,26 @@ function EventsPage() {
 
   return (
     <main className="page events-page">
+      <section className="events-block" aria-label="Предстоящие события">
+        {bookings === null ? (
+          <p>Загружаем предстоящие события…</p>
+        ) : bookings.length === 0 ? (
+          <p>Предстоящих событий пока нет.</p>
+        ) : (
+          bookings.map((booking) => (
+            <article className="booking-card" key={booking.id}>
+              <h2 className="booking-card__name">{booking.name}</h2>
+              <p className="booking-card__email">{booking.email}</p>
+              <p className="booking-card__slot">Слот: {booking.date}-{booking.start}</p>
+              <p className="booking-card__created">Создано: {createdCaption(booking.created_at)}</p>
+              <p className="booking-card__type">
+                {booking.meeting_type_name} · {booking.duration} мин
+              </p>
+            </article>
+          ))
+        )}
+      </section>
+
       <form className="events-block events-form" aria-label="Создание типа встречи" onSubmit={submitType}>
         {banner !== null ? (
           <p className="events-form__banner" role="alert">

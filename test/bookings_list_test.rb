@@ -49,6 +49,40 @@ class BookingsListTest < Minitest::Test
     assert_equal([[day, '09:30'], [day, '12:00']], body.map { |booking| [booking['date'], booking['start']] })
   end
 
+  # Граница «сейчас» из критерия (user story 33): в список попадает только бронь со стартом
+  # СТРОГО позже текущего момента. Time.stub(:now) фиксирует «сейчас» ровно на момент старта
+  # 10:00 дня +2 — бронь в ответе отсутствует.
+  def test_booking_starting_exactly_at_current_moment_is_excluded
+    create_consult_type
+    day = moscow_date(2)
+    book(date: day, start: '10:00')
+
+    Time.stub(:now, moscow_utc(day, 10, 0)) do
+      get '/api/bookings'
+    end
+
+    assert_equal 200, last_response.status
+
+    assert_equal([], JSON.parse(last_response.body))
+  end
+
+  # Тот же слот 10:00: «сейчас» = 09:59 — старт строго позже текущего момента, бронь в списке.
+  def test_booking_starting_one_minute_after_current_moment_is_listed
+    create_consult_type
+    day = moscow_date(2)
+    book(date: day, start: '10:00')
+
+    Time.stub(:now, moscow_utc(day, 9, 59)) do
+      get '/api/bookings'
+    end
+
+    assert_equal 200, last_response.status
+
+    body = JSON.parse(last_response.body)
+
+    assert_equal([[day, '10:00']], body.map { |booking| [booking['date'], booking['start']] })
+  end
+
   private
 
   def create_consult_type
@@ -68,5 +102,13 @@ class BookingsListTest < Minitest::Test
   # Дата окна на offset дней от сегодняшнего дня по Moscow (окно начинается сегодня).
   def moscow_date(offset)
     ((Time.now.getutc + MOSCOW_UTC_OFFSET) + (offset * 24 * 3600)).strftime('%Y-%m-%d')
+  end
+
+  # Момент UTC для «HH:MM по Moscow» указанного календарного дня YYYY-MM-DD: обратный сдвиг
+  # на фиксированный +03:00 (без DST — Rules of SlotGrid).
+  def moscow_utc(day, hour, minute)
+    year, month, date = day.split('-').map(&:to_i)
+
+    Time.utc(year, month, date, hour, minute) - MOSCOW_UTC_OFFSET
   end
 end

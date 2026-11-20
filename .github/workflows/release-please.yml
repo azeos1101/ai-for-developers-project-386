@@ -16,5 +16,4 @@ jobs:
       # Анализирует коммиты Conventional Commits в master и создаёт или
       # обновляет release-PR с changelog и версией; слияние PR тегаит релиз.
       # Manifest и конфиг action бустрапит сам в первом release-PR.
-      # TODO: закрепить SHA после проверки в CI/на сервере (веб-поиск недоступен)
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1

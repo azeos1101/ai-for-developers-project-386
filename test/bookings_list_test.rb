@@ -30,6 +30,25 @@ class BookingsListTest < Minitest::Test
     assert_equal [], JSON.parse(last_response.body)
   end
 
+  # Порядок из user story 31: список отсортирован по дате и началу по возрастанию, а не
+  # в порядке заведения. Фикстура заводит бронь 12:00 раньше, чем 09:30 того же дня, —
+  # ответ обязан быть [09:30, 12:00]. Ожидаемые пары заданы буквально по требованию.
+  def test_bookings_sorted_by_date_and_start_ascending_regardless_of_creation_order
+    create_consult_type
+    day = moscow_date(2)
+
+    book(date: day, start: '12:00')
+    book(date: day, start: '09:30')
+
+    get '/api/bookings'
+
+    assert_equal 200, last_response.status
+
+    body = JSON.parse(last_response.body)
+
+    assert_equal([[day, '09:30'], [day, '12:00']], body.map { |booking| [booking['date'], booking['start']] })
+  end
+
   private
 
   def create_consult_type

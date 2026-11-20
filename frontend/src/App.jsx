@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router'
+import Header from './components/Header.jsx'
 import BookingPage from './pages/BookingPage.jsx'
 import ConfirmPage from './pages/ConfirmPage.jsx'
 import EventsPage from './pages/EventsPage.jsx'
@@ -9,6 +10,7 @@ import SuccessPage from './pages/SuccessPage.jsx'
 function App() {
   return (
     <BrowserRouter>
+      <Header />
       <Routes>
         <Route path="/" element={<MainPage />} />
         <Route path="/booking" element={<BookingPage />} />

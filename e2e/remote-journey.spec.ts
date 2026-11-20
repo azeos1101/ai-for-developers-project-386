@@ -5,10 +5,12 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
 // и этот спек идёт по внешнему адресу; в обычном mise run test:e2e он проверяется на
 // своём сервере порта 4589 (конвенция изоляции портов #21–#28).
 // Хранилище внешнего сервиса НЕ пустое и живёт до перезапуска контейнера, поэтому без
-// опоры на пустое состояние: тип встречи с уникальным id по суффиксу прогона, день +2 от
-// сегодня по Europe/Moscow (весь день в будущем), слот — первый свободный из ответа API,
-// а не захардкоженный; карточка брони ищется по имени типа, без строгого количества
-// карточек в списке. Финальная проверка — отказ повторной брони того же времени (409).
+// опоры на пустое состояние: тип встречи с уникальным id по суффиксу прогона, день —
+// первый начиная с завтрашнего, у которого в календарном окне есть свободные слоты
+// (после повторных прогонов конкретные дни уже заняты бронями, а конфликты считаются
+// по всем типам встреч), слот — первый свободный из ответа API, а не захардкоженный;
+// карточка брони ищется по имени типа, без строгого количества карточек в списке.
+// Финальная проверка — отказ повторной брони того же времени (409).
 // Локаторы — по ролям и доступным именам, не по CSS (ADR-0002).
 test.use({ baseURL: process.env.E2E_BASE_URL ?? 'http://127.0.0.1:4589/' })
 
@@ -17,8 +19,6 @@ const TYPE_ID = `remote-journey-${RUN_SUFFIX}`
 const TYPE_NAME = `Прогон деплоя ${RUN_SUFFIX}`
 const GUEST_NAME = 'Гость деплоя'
 const GUEST_EMAIL = `guest-${RUN_SUFFIX}@example.com`
-
-const MOSCOW_OFFSET_MS = 3 * 60 * 60 * 1000
 
 const MONTHS_GENITIVE = [
   'января',
@@ -44,20 +44,6 @@ interface SlotJson {
   start: string
   end: string
   available: boolean
-}
-
-function moscowNow(): Date {
-  return new Date(Date.now() + MOSCOW_OFFSET_MS)
-}
-
-// Дата на offset дней от сегодня по Moscow как YYYY-MM-DD (окно начинается сегодня);
-// день +2 целиком в будущем — выбор дня и слота не зависит от часов прогона.
-function futureDay(offset: number): string {
-  const moscow = moscowNow()
-  moscow.setUTCDate(moscow.getUTCDate() + offset)
-  const month = String(moscow.getUTCMonth() + 1).padStart(2, '0')
-  const day = String(moscow.getUTCDate()).padStart(2, '0')
-  return `${moscow.getUTCFullYear()}-${month}-${day}`
 }
 
 // Доступное имя дня в сетке: «22 ноября» (exact — иначе «1 декабря» попадается в «11/21/31 декабря»).
@@ -107,8 +93,6 @@ test('гость записывается, владелец видит брон�
   request,
   page,
 }) => {
-  const day = futureDay(2)
-
   // 1. Гость: главная → «Записаться →» → страница записи.
   await page.goto('/')
   await page.getByRole('link', { name: 'Записаться →', exact: true }).click()
@@ -122,13 +106,17 @@ test('гость записывается, владелец видит брон�
   await expect(page).toHaveURL(new RegExp(`/booking\\?type=${TYPE_ID}$`))
   await expect(page.getByRole('region', { name: 'Календарь' })).toBeVisible()
 
-  // 3. День +2: бейдж свободных слотов сверяется с API и день открывается кликом.
+  // 3. День записи: первый начиная с завтрашнего, у которого в окне есть свободные слоты.
+  // Завтрашний день и далее целиком в будущем — доступность не зависит от часов прогона;
+  // сегодня (индекс 0) пропускаем, часть дня уже прошла. Конкретный день мог быть занят
+  // бронями прошлых прогонов — конфликты считаются по всем типам, поэтому берём первый
+  // день с ненулевым счётчиком, а бейдж в сетке сверяем с этим счётчиком.
   const daysResponse = await request.get('/api/availability/days', { params: { meeting_type_id: TYPE_ID } })
   expect(daysResponse.ok(), `не удалось получить счётчики по дням: ${daysResponse.status()}`).toBe(true)
   const summary = (await daysResponse.json()) as { days: DayCount[] }
-  const dayEntry = summary.days.find((entry) => entry.date === day)
-  expect(dayEntry, `дня ${day} нет в окне доступности`).toBeTruthy()
-  expect(dayEntry!.available_count).toBeGreaterThan(0)
+  const dayEntry = summary.days.slice(1).find((entry) => entry.available_count > 0)
+  expect(dayEntry, 'в окне доступности нет ни одного дня со свободными слотами').toBeTruthy()
+  const day = dayEntry!.date
 
   const cell = dayButton(page, day)
   await openDay(page, day)

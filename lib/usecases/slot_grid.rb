@@ -28,12 +28,20 @@ module UseCases
       (now_utc + MOSCOW_UTC_OFFSET).to_date
     end
 
+    # Формат даты из контракта (contract/main.tsp, @pattern): ровно YYYY-MM-DD с
+    # осмысленными месяцем/днём. Date.iso8601 один принимает и базовый (20261122),
+    # и ординальный (2026326) форматы ISO — контракт их не допускает (ревью ветки #24).
+    DATE_PATTERN = /\A\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\z/
+
     # Рабочая дата запроса: YYYY-MM-DD, существовавший календарный день внутри окна записи
-    # (окно начинается сегодня по Moscow, 14 дней); иначе nil → :validation. Date::Error —
-    # штатный сигнал парсера «такого дня нет» (2026-02-30), здесь он и есть отказ.
+    # (окно начинается сегодня по Moscow, 14 дней); иначе nil → :validation. Строка сначала
+    # сверяется с контрактным форматом, Date::Error — штатный сигнал парсера «такого дня
+    # нет» (2026-02-30), здесь он и есть отказ.
     def window_date(date, now_utc)
+      return nil unless date.is_a?(String) && DATE_PATTERN.match?(date)
+
       parsed = begin
-        date.is_a?(String) ? Date.iso8601(date) : nil
+        Date.iso8601(date)
       rescue Date::Error
         nil
       end

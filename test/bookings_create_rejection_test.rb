@@ -75,7 +75,10 @@ class BookingsCreateRejectionTest < Minitest::Test
   def test_malformed_or_impossible_date_returns_validation
     create_consult_type
 
-    ['сегодня', '2026-13-01', '2026-02-30', '31.12.2026'].each do |date|
+    # 20261122 и 2026326 Date.iso8601 понимает (базовый и ординальный форматы ISO),
+    # но контракт требует ровно YYYY-MM-DD — в проде без committee отказ даёт сервер
+    # (найдено на ревью ветки, тикет #24).
+    ['сегодня', '2026-13-01', '2026-02-30', '31.12.2026', '20261122', '2026326'].each do |date|
       post_booking(date: date)
 
       assert_equal 422, last_response.status, "дата #{date.inspect} должна отклоняться"

@@ -31,6 +31,7 @@ mise run generate  # TypeSpec → OpenAPI → SDK в frontend/src/sdk/ (нуже
 mise run build  # сборка фронтенда в frontend/dist
 mise run run    # сервер на http://localhost:4567
 mise run dev    # Vite dev-сервер с прокси /api на :4567
+mise run setup  # демо-данные в уже запущенный сервис через его API (адрес из переменной PORT)
 mise run check  # линтеры + тесты + сверка сгенерированного
 ```
 

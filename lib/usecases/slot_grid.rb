@@ -51,8 +51,9 @@ module UseCases
     end
 
     # Начало HH:MM этого дня моментом UTC по той же сетке 30 минут, что и day_starts:
-    # корректное HH:MM (часы 00–23, минуты 00 или 30) → момент; кривая строка или старт
-    # вне сетки (10:15, 09:90) → nil.
+    # корректное HH:MM (часы 00–23, минуты только :00 или :30 — 09:60/09:90 не бывает,
+    # остаток от 30 этого не ловит) → момент; кривая строка или старт вне сетки (10:15,
+    # 09:60, 09:90) → nil.
     def grid_start_time(date, hhmm)
       return nil unless hhmm.is_a?(String)
 
@@ -61,7 +62,7 @@ module UseCases
 
       hour = matched[1].to_i
       minute = matched[2].to_i
-      return nil if hour > 23 || minute % START_STEP_MINUTES != 0
+      return nil if hour > 23 || (minute != 0 && minute != START_STEP_MINUTES)
 
       work_boundary(date, hour) + (minute * 60)
     end

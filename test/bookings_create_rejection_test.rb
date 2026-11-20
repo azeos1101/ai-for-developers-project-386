@@ -87,7 +87,9 @@ class BookingsCreateRejectionTest < Minitest::Test
   def test_start_off_the_thirty_minute_grid_returns_validation
     create_consult_type
 
-    ['10:15', '10:00:30'].each do |start|
+    # 09:60/09:90 формально кратны 30 остатку минут, но таких минут не бывает:
+    # на сетке стартов только :00 и :30 (найдено на ревью ветки, тикет #24).
+    ['10:15', '10:00:30', '09:60', '09:90'].each do |start|
       post_booking(start: start)
 
       assert_equal 422, last_response.status, "старт #{start.inspect} должен отклоняться"

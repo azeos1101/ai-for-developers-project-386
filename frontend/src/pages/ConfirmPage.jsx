@@ -34,14 +34,15 @@ function isValidDateKey(/** @type {string | null} */ value) {
   return dateKey(parseDateKey(value)) === value
 }
 
-/** Старт-параметр: HH:MM на сетке 30 минут (глубже — дело сервера: сетка, часы, прошлое). */
+/** Старт-параметр: HH:MM на сетке 30 минут — минуты только :00/:30 (09:60 не бывает);
+ *  глубже — дело сервера: сетка, часы, прошлое. */
 function isValidStart(/** @type {string | null} */ value) {
   if (value === null || !START_PATTERN.test(value)) return false
 
   const hour = Number(value.slice(0, 2))
   const minute = Number(value.slice(3, 5))
 
-  return hour <= 23 && minute % 30 === 0
+  return hour <= 23 && (minute === 0 || minute === 30)
 }
 
 /** Интервал слота «HH:MM - HH:MM»: старт + длительность типа в минутах. */

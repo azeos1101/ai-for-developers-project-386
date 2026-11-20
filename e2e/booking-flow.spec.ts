@@ -237,4 +237,10 @@ test('битые query-параметры подтверждения ведут 
 
   await expect(page).toHaveURL(new RegExp(`/booking\\?type=${TYPE_ID}`))
   await expect(page.getByRole('region', { name: 'Календарь' })).toBeVisible()
+
+  // start=09:60 — минут на сетке бывает только 00/30, это битый параметр (ревью ветки, #24/#25).
+  await page.goto(`/booking/confirm?type=${TYPE_ID}&date=2030-01-01&start=09:60`)
+
+  await expect(page).toHaveURL(new RegExp(`/booking\\?type=${TYPE_ID}`))
+  await expect(confirmHeading(page)).toHaveCount(0)
 })

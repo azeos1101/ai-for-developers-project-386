@@ -51,6 +51,12 @@ USER app
 # Порт из переменной PORT (используется и при деплое, и в проверках), по умолчанию 8080.
 ENV PORT=8080
 ENV BUNDLE_APP_CONFIG=/app/.bundle
+# production: rackup без RACK_ENV поднимает development, а Sinatra 4 в development
+# пропускает только localhost-хосты (host_authorization) — за обратным прокси каждый
+# запрос приходит с Host боевого домена и получал 403 «Host not permitted». В production
+# любой Host разрешён, а необработанные ошибки не отдают стек(trace) наружу.
+ENV RACK_ENV=production
+ENV APP_ENV=production
 EXPOSE 8080
 
 # Старт автоматически: rackup берёт обработчик puma из Gemfile; -o 0.0.0.0 обязателен —

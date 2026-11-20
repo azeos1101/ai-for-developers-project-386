@@ -8,7 +8,8 @@ import BookingSlots from '../components/BookingSlots'
 
 // Страница записи (GLOSSARY.md): типы встреч приходят только из сгенерированного SDK —
 // рукописный fetch к /api запрещён (спецификация #19). Пустое хранилище — одно пустое
-// состояние; иначе карточки: название, описание, длительность «NN мин» (user story 2).
+// состояние; иначе карточки: название-ссылка выбора типа (/booking?type=…, доступное имя =
+// название, тикет #32), описание, длительность «NN мин» (user story 2).
 // С валидным ?type= — календарь окна со счётчиками (user stories 3–6, тикет #23) и слоты
 // выбранного дня (тикет #24): выбранный день живёт здесь, а колонка слотов перемонтируется
 // по key с датой — смена дня сбрасывает выбор слота. Без ?type= и с неизвестным ?type= —
@@ -52,7 +53,10 @@ function BookingPage() {
         <div className="meeting-types">
           {types.map((type) => (
             <article className="meeting-type-card" key={type.id}>
-              <h2>{type.name}</h2>
+              {/* Название — ссылка выбора типа: доступное имя ссылки = название типа (ADR-0002). */}
+              <h2>
+                <Link to={`/booking?type=${type.id}`}>{type.name}</Link>
+              </h2>
               <p className="meeting-type-card__description">{type.description}</p>
               <p className="meeting-type-card__duration">{type.duration} мин</p>
             </article>

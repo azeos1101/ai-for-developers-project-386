@@ -25,6 +25,9 @@ const UPCOMING_BOOKINGS_PORT = 4586
 // Восьмой сервер на 4587 — шапка и заголовки (#28): фикстура создаёт тип для deep-link'а
 // подтверждения, чтобы не трогать строгие сверки составов списков на соседних портах.
 const HEADER_PORT = 4587
+// Девятый сервер на 4588 — финальный сквозной сценарий (#32): он создаёт свою бронь и сверяет
+// список «Предстоящие события» строго по одной карточке, поэтому процесс только свой.
+const BOOKING_JOURNEY_PORT = 4588
 
 const server = (port: number) => ({
   command: 'mise run run',
@@ -53,5 +56,6 @@ export default defineConfig({
     server(BOOKING_CONFLICT_PORT),
     server(UPCOMING_BOOKINGS_PORT),
     server(HEADER_PORT),
+    server(BOOKING_JOURNEY_PORT),
   ],
 })

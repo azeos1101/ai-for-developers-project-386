@@ -16,5 +16,7 @@ test('главная страница рассказывает про серви
 test('с главной страницы есть ссылка на страницу записи', async ({ page }) => {
   await page.goto('/')
 
-  await expect(page.getByRole('link', { name: /Записаться/ })).toHaveAttribute('href', '/booking')
+  // exact: true — с тикетом #28 в шапке появилась одноимённая ссылка «Записаться»,
+  // без точного имени локатор стал бы неоднозначным (strict mode).
+  await expect(page.getByRole('link', { name: 'Записаться →', exact: true })).toHaveAttribute('href', '/booking')
 })

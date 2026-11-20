@@ -20,6 +20,11 @@ paths:
   /api/availability:
     get:
       operationId: Api_getAvailability
+      description: |-
+        Доступность стартов конкретной даты: только старты с шагом 30 минут, целиком
+        влезающие в рабочие часы 09:00-18:00. Прошедшие старты сегодняшнего дня —
+        `available: false`. Неизвестный `meeting_type_id` — 404 not_found; дата в
+        прошлом, вне окна или неверного формата — 422 validation.
       parameters:
         - name: date
           in: query
@@ -27,14 +32,15 @@ paths:
           description: Дата в формате YYYY-MM-DD
           schema:
             type: string
-            pattern: ^\d{4}-\d{2}-\d{2}$
+            pattern: ^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$
           explode: false
         - name: meeting_type_id
           in: query
           required: true
-          description: Идентификатор типа встречи
+          description: Идентификатор типа встречи (слаг)
           schema:
-            type: integer
+            type: string
+            pattern: ^[a-z0-9-]{1,64}$
           explode: false
       responses:
         '200':
@@ -43,15 +49,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Availability'
-        default:
-          description: An unexpected error response.
+        '404':
+          description: Тип встречи с таким идентификатором не существует
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: Отказ по формату поля или доменным правилам
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+  /api/availability/days:
+    get:
+      operationId: Api_getAvailabilityDays
+      description: |-
+        Счётчики свободных слотов по всем дням окна записи за один запрос.
+        Ответ содержит все 14 дней окна по возрастанию даты, включая дни с нулём
+        свободных слотов. Неизвестный `meeting_type_id` — 404 not_found;
+        неверный формат параметра — 422 validation.
+      parameters:
+        - name: meeting_type_id
+          in: query
+          required: true
+          description: Идентификатор типа встречи (слаг)
+          schema:
+            type: string
+            pattern: ^[a-z0-9-]{1,64}$
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilitySummary'
+        '404':
+          description: Тип встречи с таким идентификатором не существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: Отказ по формату поля или доменным правилам
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
   /api/bookings:
     get:
       operationId: Api_listBookings
+      description: |-
+        Предстоящие брони: только со стартом строго позже текущего момента
+        (Europe/Moscow), отсортированы по дате и началу по возрастанию;
+        пустой массив, когда записей нет.
       parameters: []
       responses:
         '200':
@@ -64,6 +116,12 @@ paths:
                   $ref: '#/components/schemas/Booking'
     post:
       operationId: Api_createBooking
+      description: |-
+        Запись на слот. Формат полей и доменные правила (дата вне окна, старт в прошлом,
+        старт не на сетке 30 минут или не влезающий в часы, неизвестный
+        `meeting_type_id`) — 422 validation. Пересечение интервалов, включая частичное
+        наложение разных типов встреч и одновременные запросы, — 409 conflict;
+        при гонке создаётся ровно одна бронь.
       parameters: []
       responses:
         '201':
@@ -72,12 +130,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Booking'
-        default:
-          description: An unexpected error response.
+        '409':
+          description: Время уже занято (фактический конфликт интервалов или гонка)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/ConflictError'
+        '422':
+          description: Отказ по формату поля или доменным правилам
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
       requestBody:
         required: true
         content:
@@ -87,6 +151,7 @@ paths:
   /api/health:
     get:
       operationId: Api_health
+      description: Проверка живости сервиса
       parameters: []
       responses:
         '200':
@@ -98,6 +163,7 @@ paths:
   /api/meeting-types:
     get:
       operationId: Api_listMeetingTypes
+      description: Список типов встреч
       parameters: []
       responses:
         '200':
@@ -110,6 +176,10 @@ paths:
                   $ref: '#/components/schemas/MeetingType'
     post:
       operationId: Api_createMeetingType
+      description: |-
+        Создание типа встречи. `id` задаёт владелец — слаг `^[a-z0-9-]{1,64}$`.
+        Неверный формат `id`, названия или длительности (вне 30-240 или не кратна 30) —
+        422 validation; занятый `id` — 409 conflict.
       parameters: []
       responses:
         '201':
@@ -118,12 +188,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MeetingType'
-        default:
-          description: An unexpected error response.
+        '409':
+          description: Время уже занято (фактический конфликт интервалов или гонка)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/ConflictError'
+        '422':
+          description: Отказ по формату поля или доменным правилам
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
       requestBody:
         required: true
         content:
@@ -132,16 +208,6 @@ paths:
               $ref: '#/components/schemas/MeetingTypeInput'
 components:
   schemas:
-    ApiError:
-      type: object
-      required:
-        - code
-        - message
-      properties:
-        code:
-          $ref: '#/components/schemas/ErrorCode'
-        message:
-          type: string
     Availability:
       type: object
       required:
@@ -151,17 +217,42 @@ components:
       properties:
         date:
           type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
+          pattern: ^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$
           description: Дата в формате YYYY-MM-DD
         meeting_type_id:
-          type: integer
-          description: Идентификатор типа встречи
+          type: string
+          pattern: ^[a-z0-9-]{1,64}$
+          description: Идентификатор типа встречи (слаг)
         slots:
           type: array
           items:
             $ref: '#/components/schemas/Slot'
-          description: Все старты дня с шагом 30 минут, помеченные доступностью
-      description: Доступность слотов на конкретную дату для типа встречи
+          description: Все влезающие в рабочие часы старты дня с шагом 30 минут, помеченные доступностью
+      description: |-
+        Доступность слотов на конкретную дату для типа встречи.
+
+          День содержит только старты с шагом 30 минут, чей слот целиком помещается
+          в рабочие часы; старты, не влезающие в часы, не возвращаются. Прошедшие старты
+          сегодняшнего дня возвращаются с `available: false`.
+    AvailabilitySummary:
+      type: object
+      required:
+        - meeting_type_id
+        - days
+      properties:
+        meeting_type_id:
+          type: string
+          pattern: ^[a-z0-9-]{1,64}$
+          description: Идентификатор типа встречи (слаг)
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/DayAvailability'
+          description: Все 14 дней окна по возрастанию даты
+      description: |-
+        Доступность по дням всего 14-дневного окна для типа встречи.
+
+          Содержит все дни окна по возрастанию даты, включая дни с нулём свободных слотов.
     Booking:
       type: object
       required:
@@ -178,14 +269,19 @@ components:
       properties:
         id:
           type: integer
+          description: Идентификатор брони
         meeting_type_id:
-          type: integer
-          description: Тип встречи
+          type: string
+          pattern: ^[a-z0-9-]{1,64}$
+          description: Тип встречи (слаг)
         meeting_type_name:
           type: string
           description: Название типа встречи (денормализовано для удобства клиента)
         duration:
           type: integer
+          minimum: 30
+          maximum: 240
+          multipleOf: 30
           description: Длительность слота в минутах
         name:
           type: string
@@ -197,15 +293,15 @@ components:
           description: Email гостя
         date:
           type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
+          pattern: ^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$
           description: Дата слота, YYYY-MM-DD
         start:
           type: string
-          pattern: ^\d{2}:\d{2}$
+          pattern: ^([01]\d|2[0-3]):[0-5]\d$
           description: Начало слота, HH:MM
         end:
           type: string
-          pattern: ^\d{2}:\d{2}$
+          pattern: ^([01]\d|2[0-3]):[0-5]\d$
           description: Конец слота, HH:MM
         created_at:
           type: string
@@ -221,27 +317,63 @@ components:
         - start
       properties:
         meeting_type_id:
-          type: integer
+          type: string
+          pattern: ^[a-z0-9-]{1,64}$
+          description: Тип встречи (слаг)
         name:
           type: string
           minLength: 1
+          description: Имя гостя
         email:
           type: string
           minLength: 3
+          description: Email гостя
         date:
           type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
+          pattern: ^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$
+          description: Дата слота, YYYY-MM-DD
         start:
           type: string
-          pattern: ^\d{2}:\d{2}$
+          pattern: ^([01]\d|2[0-3]):[0-5]\d$
+          description: Начало слота, HH:MM (Europe/Moscow), шаг 30 минут
       description: Запрос на создание брони
+    ConflictError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - conflict
+          description: Причина отказа
+        message:
+          type: string
+          description: Человекочитаемое объяснение отказа
+      description: Время уже занято (фактический конфликт интервалов или гонка)
+    DayAvailability:
+      type: object
+      required:
+        - date
+        - available_count
+      properties:
+        date:
+          type: string
+          pattern: ^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$
+          description: Дата в формате YYYY-MM-DD
+        available_count:
+          type: integer
+          minimum: 0
+          description: Число стартов, доступных для брони (целиком в рабочих часах, не прошедшие, без пересечений)
+      description: Число свободных слотов одного дня окна записи
     ErrorCode:
       type: string
       enum:
         - validation
         - not_found
         - conflict
-      description: Коды ошибок API
+      description: Машинночитаемый код ошибки API
     HealthStatus:
       type: object
       required:
@@ -261,8 +393,9 @@ components:
         - duration
       properties:
         id:
-          type: integer
-          description: Идентификатор типа встречи
+          type: string
+          pattern: ^[a-z0-9-]{1,64}$
+          description: Идентификатор типа встречи — слаг, который задаёт владелец
         name:
           type: string
           minLength: 1
@@ -272,25 +405,52 @@ components:
           description: Описание встречи
         duration:
           type: integer
-          minimum: 1
-          description: Длительность встречи в минутах
+          minimum: 30
+          maximum: 240
+          multipleOf: 30
+          description: Длительность встречи в минутах — от 30 до 240 включительно, кратна 30
       description: Тип встречи, заведённый владельцем календаря
     MeetingTypeInput:
       type: object
       required:
+        - id
         - name
         - duration
       properties:
+        id:
+          type: string
+          pattern: ^[a-z0-9-]{1,64}$
+          description: Идентификатор типа встречи — слаг `^[a-z0-9-]{1,64}$` (например, `intro-call`)
         name:
           type: string
           minLength: 1
+          description: Название встречи
         description:
           type: string
+          description: Описание встречи
           default: ''
         duration:
           type: integer
-          minimum: 1
-      description: Запрос на создание типа встречи
+          minimum: 30
+          maximum: 240
+          multipleOf: 30
+          description: Длительность встречи в минутах — от 30 до 240 включительно, кратна 30
+      description: Запрос на создание типа встречи; id задаёт владелец
+    NotFoundError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - not_found
+          description: Причина отказа
+        message:
+          type: string
+          description: Человекочитаемое объяснение отказа
+      description: Тип встречи с таким идентификатором не существует
     Slot:
       type: object
       required:
@@ -300,13 +460,28 @@ components:
       properties:
         start:
           type: string
-          pattern: ^\d{2}:\d{2}$
+          pattern: ^([01]\d|2[0-3]):[0-5]\d$
           description: Время начала слота, HH:MM (Europe/Moscow)
         end:
           type: string
-          pattern: ^\d{2}:\d{2}$
+          pattern: ^([01]\d|2[0-3]):[0-5]\d$
           description: Время окончания слота, HH:MM (Europe/Moscow)
         available:
           type: boolean
           description: true, если слот свободен и его можно забронировать
       description: Один слот дня в разрезе доступности
+    ValidationError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - validation
+          description: Причина отказа
+        message:
+          type: string
+          description: Человекочитаемое объяснение отказа
+      description: Отказ по формату поля или доменным правилам

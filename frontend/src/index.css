@@ -44,6 +44,25 @@ a {
   color: var(--color-accent-dark);
 }
 
+/* Глобальная шапка навигации (тикет #28): есть на всех маршрутах. */
+.app-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 32px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-header__nav {
+  display: flex;
+  gap: 24px;
+}
+
+.app-header__link {
+  font-size: 15px;
+  font-weight: 600;
+}
+
 .hero,
 .page {
   max-width: 640px;
@@ -88,4 +107,334 @@ a {
 .notice {
   color: var(--color-text-muted);
   font-size: 15px;
+}
+
+/* Список типов встреч на странице записи. */
+.meeting-types {
+  display: grid;
+  gap: 16px;
+  text-align: left;
+  margin-bottom: 32px;
+}
+
+.meeting-type-card {
+  padding: 20px 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.meeting-type-card h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.meeting-type-card__description {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.meeting-type-card__duration {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-accent-dark);
+}
+
+/* Страница предстоящих событий (тикет #22): форма создания типа и список типов. */
+.events-page {
+  text-align: left;
+}
+
+.events-block + .events-block {
+  margin-top: 48px;
+}
+
+.events-form,
+.confirm-form {
+  display: grid;
+  gap: 8px;
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.events-form__banner,
+.confirm-form__banner {
+  margin: 0 0 8px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 15px;
+}
+
+.events-form__error,
+.confirm-form__error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.events-form__label,
+.confirm-form__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.events-form__field,
+.confirm-form__field {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.events-form__field[aria-invalid='true'],
+.confirm-form__field[aria-invalid='true'] {
+  border-color: #b91c1c;
+  outline: 2px solid #fecaca;
+}
+
+.events-form .button,
+.confirm-form .button {
+  margin-top: 16px;
+  border: none;
+  cursor: pointer;
+  justify-self: start;
+}
+
+.events-form .button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.event-type-card {
+  padding: 20px 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.event-type-card + .event-type-card {
+  margin-top: 16px;
+}
+
+.event-type-card__title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.event-type-card__duration {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-accent-dark);
+}
+
+/* Id типа встречи в интерфейсе показывается моноширинно (эталон «Предстоящих событий»). */
+.event-type-card__id {
+  margin: 0 0 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+.event-type-card__description {
+  margin: 0;
+  font-size: 16px;
+}
+
+/* Календарь окна записи (тикет #23): сетка месяца, бейджи «N св.», серый некликабельный
+   день вне окна — приглушённый фон и текст, выбранный день — оранжевая рамка (эталон). */
+.calendar {
+  margin-top: 24px;
+  text-align: left;
+}
+
+.calendar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.calendar__header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.calendar__arrow {
+  min-width: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.calendar__arrow:disabled {
+  color: var(--color-text-muted);
+  opacity: 0.5;
+  cursor: default;
+}
+
+.calendar__weekdays,
+.calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar__weekdays {
+  margin-bottom: 4px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.calendar__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 52px;
+  padding: 6px 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.calendar__day:disabled {
+  background: var(--color-background);
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.calendar__day--selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.calendar__badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-accent-dark);
+}
+
+/* Страница записи с выбранным типом (тикет #24): календарь, слоты дня и информация. */
+.booking-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.booking-side {
+  display: grid;
+  gap: 16px;
+  text-align: left;
+}
+
+.day-slots__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.slot:disabled {
+  background: var(--color-background);
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.slot--selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.slot__status {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent-dark);
+}
+
+.slot:disabled .slot__status {
+  color: var(--color-text-muted);
+}
+
+.day-slots__placeholder {
+  margin: 0 0 16px;
+  color: var(--color-text-muted);
+}
+
+.day-slots__continue,
+.slot__time {
+  font-weight: 600;
+}
+
+.day-slots__continue {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: var(--color-surface);
+  font: inherit;
+  cursor: pointer;
+}
+
+.day-slots__continue:hover {
+  background: var(--color-accent-dark);
+}
+
+.day-slots__continue:disabled {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.booking-info__list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 20px 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.booking-info__item dt {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.booking-info__item dd {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
 }

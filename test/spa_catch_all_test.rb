@@ -7,7 +7,7 @@ require_relative 'test_helper'
 class SpaCatchAllTest < Minitest::Test
   include Rack::Test::Methods
 
-  def app = App
+  def app = VALIDATED_APP
 
   def test_booking_path_serves_index_html
     get '/booking'

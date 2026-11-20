@@ -3,23 +3,29 @@ GEM
   specs:
     ast (2.4.3)
     base64 (0.3.0)
+    committee (5.7.0)
+      json_schema (~> 0.14, >= 0.14.3)
+      openapi_parser (~> 2.8)
+      rack (>= 1.5)
     json (3.1.0)
+    json_schema (0.21.0)
     language_server-protocol (3.17.0.6)
     lint_roller (1.1.0)
     logger (1.7.0)
     minitest (5.27.0)
     mustermann (3.1.1)
     nio4r (2.7.5)
-    parallel (2.3.0)
+    openapi_parser (2.8.0)
+    parallel (1.28.0)
     parser (3.3.14.0)
       ast (~> 2.4.1)
       racc
-    prism (2.1.0-x86_64-linux-gnu)
-    puma (8.1.1)
+    prism (2.1.0)
+    puma (8.1.2)
       nio4r (~> 2.0)
     racc (1.8.1)
     rack (3.2.8)
-    rack-protection (4.2.1)
+    rack-protection (4.2.2)
       base64 (>= 0.1.0)
       logger (>= 1.6.0)
       rack (>= 3.0.0, < 4)
@@ -54,11 +60,11 @@ GEM
       rubocop (>= 1.89.0, < 2.0)
       rubocop-ast (>= 1.38.0, < 2.0)
     ruby-progressbar (1.13.0)
-    sinatra (4.2.1)
+    sinatra (4.2.2)
       logger (>= 1.6.0)
       mustermann (~> 3.0)
       rack (>= 3.0.0, < 4)
-      rack-protection (= 4.2.1)
+      rack-protection (= 4.2.2)
       rack-session (>= 2.0.0, < 3)
       tilt (~> 2.0)
     tilt (2.9.0)
@@ -70,6 +76,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  committee
   minitest
   puma
   rack-test

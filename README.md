@@ -25,13 +25,17 @@ mise run install   # зависимости: гемы, компилятор ко
 mise run generate  # TypeSpec → OpenAPI → SDK в frontend/src/sdk/ (нужен только при смене контракта)
 ```
 
+`mise run install` ставит и Schemathesis для `check:contract`: `pipx` и `pipx:schemathesis` зафиксированы в `[tools]` mise.toml.
+
 ## Использование
 
 ```bash
 mise run build  # сборка фронтенда в frontend/dist
 mise run run    # сервер на http://localhost:4567
 mise run dev    # Vite dev-сервер с прокси /api на :4567
+mise run setup  # демо-данные в уже запущенный сервис через его API (адрес из переменной PORT)
 mise run check  # линтеры + тесты + сверка сгенерированного
+mise run check:contract  # Schemathesis: фаззинг запущенного сервера по openapi/openapi.yaml (в check не входит)
 ```
 
 `make` — тонкая обёртка над этими командами (`make install`, `make generate`, `make run`, `make test`, `make lint`, `make check`).
@@ -54,10 +58,11 @@ mise run check  # линтеры + тесты + сверка сгенериро�
 | GET | `/api/meeting-types` | Список типов встреч |
 | POST | `/api/meeting-types` | Создание типа встречи (владелец) |
 | GET | `/api/availability?date=&meeting_type_id=` | Слоты дня с доступностью |
+| GET | `/api/availability/days?meeting_type_id=` | Счётчики свободных слотов по всем дням окна |
 | GET | `/api/bookings` | Предстоящие брони (все типы) |
 | POST | `/api/bookings` | Создание брони (`201` / `409` / `422`) |
 
-Страницы: `GET /` (лендинг, выбор типа встречи) → `GET /booking?type=` (календарь + слоты) → `GET /booking/confirm` (форма) → успех; `GET /events` («Предстоящие события» + управление типами встреч).
+Страницы: `GET /` (главная страница: вводная о сервисе + «Записаться →») → `GET /booking` (страница записи: выбор типа встречи, GLOSSARY.md; `?type=` — календарь и слоты) → `GET /booking/confirm` (форма) → успех; `GET /events` («Предстоящие события» + управление типами встреч).
 
 ---
 

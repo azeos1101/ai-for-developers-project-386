@@ -7,7 +7,7 @@ require_relative 'test_helper'
 class ApiNotFoundTest < Minitest::Test
   include Rack::Test::Methods
 
-  def app = App
+  def app = VALIDATED_APP
 
   def test_unknown_api_route_returns_json_not_found
     get '/api/no-such-endpoint'

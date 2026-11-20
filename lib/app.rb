@@ -87,12 +87,30 @@ class App < Sinatra::Base
     end
   end
 
+  # Известные пути контракта и объявленные для них методы (матрица contract/main.tsp).
+  API_METHODS_BY_PATH = {
+    '/api/health' => %w[GET],
+    '/api/meeting-types' => %w[GET POST],
+    '/api/availability' => %w[GET],
+    '/api/availability/days' => %w[GET],
+    '/api/bookings' => %w[GET POST]
+  }.freeze
+
   # ADR-0001: неизвестный маршрут /api/* — 404 в JSON по модели ApiError, не HTML.
+  # Метод, не объявленный контрактом для известного пути, — 405 с Allow (RFC 9110):
+  # путь существует, неприменим метод. Найдено Schemathesis, ST204 (#30).
   not_found do
     next unless api_request?
 
     content_type :json
-    { code: 'not_found', message: "No route for #{request.request_method} #{request.path_info}" }.to_json
+    allowed = API_METHODS_BY_PATH[request.path_info]
+    if allowed && !allowed.include?(request.request_method)
+      status 405
+      headers 'Allow' => allowed.join(', ')
+      { code: 'not_found', message: "Method #{request.request_method} is not allowed for #{request.path_info}" }.to_json
+    else
+      { code: 'not_found', message: "No route for #{request.request_method} #{request.path_info}" }.to_json
+    end
   end
 
   helpers do

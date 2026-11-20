@@ -62,10 +62,10 @@ model MeetingTypeInput {
 /** Один слот дня в разрезе доступности */
 model Slot {
   /** Время начала слота, HH:MM (Europe/Moscow) */
-  @pattern("^\\d{2}:\\d{2}$") start: string;
+  @pattern("^([01]\\d|2[0-3]):[0-5]\\d$") start: string;
 
   /** Время окончания слота, HH:MM (Europe/Moscow) */
-  @pattern("^\\d{2}:\\d{2}$") end: string;
+  @pattern("^([01]\\d|2[0-3]):[0-5]\\d$") end: string;
 
   /** true, если слот свободен и его можно забронировать */
   available: boolean;
@@ -80,7 +80,7 @@ model Slot {
 */
 model Availability {
   /** Дата в формате YYYY-MM-DD */
-  @pattern("^\\d{4}-\\d{2}-\\d{2}$") date: string;
+  @pattern("^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$") date: string;
 
   /** Идентификатор типа встречи (слаг) */
   @pattern("^[a-z0-9-]{1,64}$") meeting_type_id: string;
@@ -92,7 +92,7 @@ model Availability {
 /** Число свободных слотов одного дня окна записи */
 model DayAvailability {
   /** Дата в формате YYYY-MM-DD */
-  @pattern("^\\d{4}-\\d{2}-\\d{2}$") date: string;
+  @pattern("^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$") date: string;
 
   /** Число стартов, доступных для брони (целиком в рабочих часах, не прошедшие, без пересечений) */
   @minValue(0) available_count: integer;
@@ -135,13 +135,13 @@ model Booking {
   @minLength(3) email: string;
 
   /** Дата слота, YYYY-MM-DD */
-  @pattern("^\\d{4}-\\d{2}-\\d{2}$") date: string;
+  @pattern("^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$") date: string;
 
   /** Начало слота, HH:MM */
-  @pattern("^\\d{2}:\\d{2}$") start: string;
+  @pattern("^([01]\\d|2[0-3]):[0-5]\\d$") start: string;
 
   /** Конец слота, HH:MM */
-  @pattern("^\\d{2}:\\d{2}$") end: string;
+  @pattern("^([01]\\d|2[0-3]):[0-5]\\d$") end: string;
 
   /** Момент создания брони, ISO 8601 */
   created_at: string;
@@ -159,10 +159,10 @@ model BookingInput {
   @minLength(3) email: string;
 
   /** Дата слота, YYYY-MM-DD */
-  @pattern("^\\d{4}-\\d{2}-\\d{2}$") date: string;
+  @pattern("^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$") date: string;
 
   /** Начало слота, HH:MM (Europe/Moscow), шаг 30 минут */
-  @pattern("^\\d{2}:\\d{2}$") start: string;
+  @pattern("^([01]\\d|2[0-3]):[0-5]\\d$") start: string;
 }
 
 /** Состояние сервиса */
@@ -260,7 +260,7 @@ interface Api {
   @route("/availability")
   @get getAvailability(
     /** Дата в формате YYYY-MM-DD */
-    @query @pattern("^\\d{4}-\\d{2}-\\d{2}$") date: string,
+    @query @pattern("^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$") date: string,
     /** Идентификатор типа встречи (слаг) */
     @query @pattern("^[a-z0-9-]{1,64}$") meeting_type_id: string,
   ): Availability | NotFoundError | ValidationError;

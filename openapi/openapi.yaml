@@ -32,7 +32,7 @@ paths:
           description: Дата в формате YYYY-MM-DD
           schema:
             type: string
-            pattern: ^\d{4}-\d{2}-\d{2}$
+            pattern: ^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$
           explode: false
         - name: meeting_type_id
           in: query
@@ -217,7 +217,7 @@ components:
       properties:
         date:
           type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
+          pattern: ^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$
           description: Дата в формате YYYY-MM-DD
         meeting_type_id:
           type: string
@@ -293,15 +293,15 @@ components:
           description: Email гостя
         date:
           type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
+          pattern: ^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$
           description: Дата слота, YYYY-MM-DD
         start:
           type: string
-          pattern: ^\d{2}:\d{2}$
+          pattern: ^([01]\d|2[0-3]):[0-5]\d$
           description: Начало слота, HH:MM
         end:
           type: string
-          pattern: ^\d{2}:\d{2}$
+          pattern: ^([01]\d|2[0-3]):[0-5]\d$
           description: Конец слота, HH:MM
         created_at:
           type: string
@@ -330,11 +330,11 @@ components:
           description: Email гостя
         date:
           type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
+          pattern: ^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$
           description: Дата слота, YYYY-MM-DD
         start:
           type: string
-          pattern: ^\d{2}:\d{2}$
+          pattern: ^([01]\d|2[0-3]):[0-5]\d$
           description: Начало слота, HH:MM (Europe/Moscow), шаг 30 минут
       description: Запрос на создание брони
     ConflictError:
@@ -360,7 +360,7 @@ components:
       properties:
         date:
           type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
+          pattern: ^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$
           description: Дата в формате YYYY-MM-DD
         available_count:
           type: integer
@@ -460,11 +460,11 @@ components:
       properties:
         start:
           type: string
-          pattern: ^\d{2}:\d{2}$
+          pattern: ^([01]\d|2[0-3]):[0-5]\d$
           description: Время начала слота, HH:MM (Europe/Moscow)
         end:
           type: string
-          pattern: ^\d{2}:\d{2}$
+          pattern: ^([01]\d|2[0-3]):[0-5]\d$
           description: Время окончания слота, HH:MM (Europe/Moscow)
         available:
           type: boolean

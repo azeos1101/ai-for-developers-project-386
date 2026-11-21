@@ -9,5 +9,10 @@
       },
       "enabled": false
     }
+  },
+  "agents": {
+    "plan": {
+      "model": "kimi-code-plan-global/k3.1-pro"
+    }
   }
 }
